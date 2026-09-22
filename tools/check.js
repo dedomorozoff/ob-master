@@ -13,7 +13,7 @@ var used = {};
 (html.match(/getElementById\('([^']+)'\)/g) || []).forEach(function(s){ used[s.slice(16,-2)] = true; });
 
 Object.keys(used).sort().forEach(function(id){
-  var dynamic = /^(q4_|why4_|u9_|why9_)\d+$/.test(id);
+  var dynamic = /^(q4_|why4_|u9_|why9_|h11row|h11hash|h12mk|a13row|h14b|t15sel|w17mk|r18sel|e20q)\d+$/.test(id);
   if(!htmlIds[id] && !dynamic) fails.push('JS ищет несуществующий id: ' + id);
 });
 
@@ -46,7 +46,19 @@ if(markup.indexOf('203.0.113.45') >= 0) fails.push('IP атаки найден �
  'terminput','qwrap','phlog','pwhintbox','m2hintbox','m3hintbox','m4hintbox','m5hintbox',
  'keygrid','m6result','m7table','m7err','logwrap','m8result','m8err',
  'urlwrap','subwrap','m10cipher','m10answer','m10check','m10err',
- 'm6hintbox','m7hintbox','m8hintbox','m9hintbox','m10hintbox']
+ 'm6hintbox','m7hintbox','m8hintbox','m9hintbox','m10hintbox',
+  /* эксперт-блок 11-20 */
+  'h11ref','h11wrap','m11hint','m11hintbox','m11err','m11ok',
+  'h12wrap','m12check','m12hint','m12hintbox','m12err',
+  'a13wrap','m13hint','m13hintbox','m13err',
+  'h14wrap','m14check','m14reset','m14hint','m14hintbox','m14err',
+  'c15wrap','m15check','m15hint','m15hintbox','m15err',
+  'h16text','m16answer','m16check','m16hint','m16hintbox','m16err',
+  'w17wrap','w17fix','m17check','m17hint','m17hintbox','m17err',
+  'r18wrap','m18check','m18hint','m18hintbox','m18err',
+  'n19wrap','m19hint','m19hintbox','m19err','m19result',
+  'e20wrap','m20check','m20hint','m20hintbox','m20err',
+  'st11','st12','st13','st14','st15','st16','st17','st18','st19','st20']
  .forEach(function(id){ if(!htmlIds[id]) fails.push('нет обязательного элемента #' + id); });
 
 console.log('id проверено: ' + Object.keys(used).length + ', всего id в разметке: ' + Object.keys(htmlIds).length);

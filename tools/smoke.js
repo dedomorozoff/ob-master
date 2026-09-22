@@ -21,12 +21,13 @@ var unknownIds = {};
 var document = {
   getElementById: function(id){
     if(!els[id]){
-      if(!htmlIds[id] && !/^(q4_|why4_|u9_|why9_)\d+$/.test(id)) unknownIds[id] = true;
+      if(!htmlIds[id] && !/^(q4_|why4_|u9_|why9_|h11row|h11hash|h12mk|a13row|h14b|t15sel|w17mk|r18sel|e20q)\d+$/.test(id)) unknownIds[id] = true;
       els[id] = mkEl(id);
     }
     return els[id];
   },
-  createElement: function(){ return mkEl('new'); }
+  createElement: function(){ return mkEl('new'); },
+  getElementsByName: function(){ return []; }
 };
 var store = {};
 var localStorage = {
@@ -193,17 +194,95 @@ sandbox.$('m10answer').value = '  доступ   разрешен ';
 sandbox.s10check();
 ok('миссия 10: ответ принят несмотря на регистр и лишние пробелы', sandbox.S.done.m10 === true);
 
-/* --- 12. Итог --- */
-ok('очки = 198 из 200 (минус 2 за неверную попытку в миссии 9)', sandbox.S.score === 198, sandbox.S.score);
-ok('собраны все 10 фрагментов', sandbox.doneCount() === 10, sandbox.doneCount());
-sandbox.openFinal();
-ok('код доступа сформирован в формате KB-XXXXXX', /^KB-\d{6}$/.test(sandbox.S.code), sandbox.S.code);
-ok('фраза-итог собрана полностью из 10 фрагментов',
-   String(sandbox.$('codephraseOut').innerHTML).indexOf(
-     'БЕЗОПАСНОСТЬ ЭТО ПРОЦЕСС, А НЕ ПРОДУКТ И ЕГО ДЕЛАЮТ ЛЮДИ КАЖДЫЙ ДЕНЬ') >= 0,
-   sandbox.$('codephraseOut').innerHTML);
+/* --- 12. Эксперт-блок: миссии 11-20 --- */
+/* Миссия 11: хеш */
+ok('миссия 11: подмена ловится по хешу, а не по глазам',
+   sandbox.h11hash('Договор №14\nСумма: 100000 руб.\nСрок оплаты: 31.12.2026') !==
+   sandbox.h11hash('Договор №14\nСумма: 1000000 руб.\nСрок оплаты: 31.12.2026'));
+sandbox.h11mark(2);
+ok('миссия 11: подменённый файл найден', sandbox.S.done.m11 === true);
 
-/* --- 13. Сертификат --- */
+/* Миссия 12: заголовки */
+sandbox.h12toggle({ getAttribute: function(k){ return '1'; } });
+sandbox.h12toggle({ getAttribute: function(k){ return '3'; } });
+sandbox.h12toggle({ getAttribute: function(k){ return '4'; } });
+sandbox.h12check();
+ok('миссия 12: подделка доказана через Return-Path, Reply-To и SPF/DKIM/DMARC',
+   sandbox.S.done.m12 === true);
+
+/* Миссия 13: аудит */
+for(var a13i = 0; a13i < sandbox.A13.length; a13i++){
+  (function(i){ sandbox.a13fix(i); })(a13i);
+}
+ok('миссия 13: исправлены все 6 опасных настроек', sandbox.S.done.m13 === true);
+
+/* Миссия 14: цепочка атаки */
+ok('миссия 14: события показаны перемешанными, а не в хронологии', (function(){
+  for(var q = 0; q < sandbox.H14_EV.length; q++){ if(sandbox.H14_EV[q].pos !== q + 1) return true; }
+  return false;
+})());
+var h14order = [];
+for(var h14p = 1; h14p <= sandbox.H14_EV.length; h14p++){
+  for(var h14j = 0; h14j < sandbox.H14_EV.length; h14j++){
+    if(sandbox.H14_EV[h14j].pos === h14p) h14order.push(h14j);
+  }
+}
+h14order.forEach(function(i){ sandbox.h14pick(i); });
+sandbox.h14check();
+ok('миссия 14: хронология атаки восстановлена', sandbox.S.done.m14 === true);
+
+/* Миссия 15: крипто-инструменты */
+for(var t15i = 0; t15i < sandbox.T15_TASKS.length; t15i++){
+  sandbox.$('t15sel' + t15i).value = String(sandbox.T15_TASKS[t15i].a);
+}
+sandbox.t15check();
+ok('миссия 15: все 6 задач сопоставлены инструментам', sandbox.S.done.m15 === true);
+
+/* Миссия 16: стеганография */
+sandbox.$('m16answer').value = '  нЕзбасмамм ';
+sandbox.m16check();
+ok('миссия 16: акростих разгадан (регистр и пробелы не мешают)', sandbox.S.done.m16 === true);
+
+/* Миссия 17: SQL-инъекция */
+sandbox.document.getElementsByName = function(name){
+  if(name === 'w17fix') return [{ checked:true, value:'1' }];   /* параметризованные запросы */
+  var m = /^e20q(\d+)$/.exec(String(name));
+  if(m) return [{ checked:true, value:String(sandbox.E20[parseInt(m[1], 10)].c) }];
+  return [];
+};
+['1','3','5'].forEach(function(w){ sandbox.w17toggle({ getAttribute: function(k){ return w; } }); });
+sandbox.w17check();
+ok('миссия 17: инъекции найдены, выбрана параметризация', sandbox.S.done.m17 === true);
+
+/* Миссия 18: оценка риска */
+(function(){
+  var want = sandbox.R18.map(function(r, i){ return {i:i, s:r.p * r.d}; })
+                        .sort(function(a, b){ return b.s - a.s; })
+                        .map(function(x){ return x.i; });
+  for(var k = 0; k < 4; k++) sandbox.$('r18sel' + want[k]).value = String(k + 1);
+})();
+sandbox.r18check();
+ok('миссия 18: приоритеты по произведению вероятность×ущерб', sandbox.S.done.m18 === true);
+
+/* Миссия 19: Wi-Fi */
+sandbox.n19pick(0, { className:'' });
+ok('миссия 19: выбор открытой сети не засчитан', sandbox.S.done.m19 !== true);
+sandbox.n19pick(3, { className:'' });
+ok('миссия 19: WPA3-Enterprise сеть выбрана верно', sandbox.S.done.m19 === true);
+
+/* Миссия 20: экзамен */
+sandbox.e20check();
+ok('миссия 20: экзамен 8 из 8', sandbox.S.done.m20 === true);
+
+/* --- 13. Итог --- */
+ok('собраны все 20 фрагментов', sandbox.doneCount() === 20, sandbox.doneCount());
+sandbox.openFinal(true);
+ok('код доступа сформирован в формате KB-XXXXXX', /^KB-\d{6}$/.test(sandbox.S.code), sandbox.S.code);
+ok('экспертный финал: заголовок уровня ЭКСПЕРТ',
+   String(sandbox.$('finaltitle').innerHTML).indexOf('ЭКСПЕРТ') >= 0,
+   sandbox.$('finaltitle').innerHTML);
+
+/* --- 14. Сертификат --- */
 sandbox.$('stname').value = 'Тестов Тест';
 sandbox.issueCert();
 ok('сертификат выдаётся на введённое ФИО', sandbox.$('certname').textContent === 'Тестов Тест');
@@ -213,16 +292,16 @@ ok('слишком короткое ФИО отклонено', sandbox.$('certn
 ok('личный код попал в сертификат', sandbox.$('certcode').textContent === sandbox.S.code);
 ok('дата заполнена', /\d{2}\.\d{2}\.\d{4}/.test(sandbox.$('certdate').textContent), sandbox.$('certdate').textContent);
 
-/* --- 14. Восстановление прогресса --- */
+/* --- 15. Восстановление прогресса --- */
 ok('состояние сохранено в localStorage',
-   typeof store['kiberbarier_v2'] === 'string' && store['kiberbarier_v2'].length > 20);
-var restored = JSON.parse(store['kiberbarier_v2']);
-ok('в сохранении есть все 10 миссий, очки и штрафы',
-   restored.done.m1 === true && restored.done.m6 === true && restored.done.m10 === true &&
-   restored.score === 198);
+   typeof store['kiberbarier_v3'] === 'string' && store['kiberbarier_v3'].length > 20);
+var restored = JSON.parse(store['kiberbarier_v3']);
+ok('в сохранении есть все миссии, очки и штрафы',
+   restored.done.m1 === true && restored.done.m11 === true && restored.done.m20 === true &&
+   restored.score === sandbox.S.score);
 var restoredKeys = 0;
 for(var rk in restored.done){ if(restored.done[rk]) restoredKeys++; }
-ok('в сохранении ровно 10 записей о миссиях', Object.keys(restored.done).length === 10 && restoredKeys === 10);
+ok('в сохранении ровно 20 записей о миссиях', Object.keys(restored.done).length === 20 && restoredKeys === 20);
 ok('JS не обращается к отсутствующим в разметке id',
    Object.keys(unknownIds).length === 0, Object.keys(unknownIds).join(', ') || 'нет');
 

@@ -2,22 +2,23 @@
 window.addEventListener('load', function(){
   var log = [];
   function chk(n, c, e){ log.push((c ? 'PASS' : 'FAIL') + ' :: ' + n + (e !== undefined ? ' -> ' + e : '')); }
-  chk('восстановлено 10 пройденных миссий', doneCount() === 10, doneCount());
-  chk('очки восстановлены (189 с учётом штрафов)', S.score === 189, S.score);
+  chk('восстановлено 20 пройденных миссий', doneCount() === 20, doneCount());
+  chk('очки восстановлены (375 с учётом штрафов)', S.score === 375, S.score);
   chk('финальный блок открыт автоматически', document.getElementById('finalbox').style.display === 'block');
   chk('фрагменты показаны словами (первый и последний)',
       document.getElementById('fragbar').innerHTML.indexOf('БЕЗОПАСНОСТЬ') >= 0 &&
-      document.getElementById('fragbar').innerHTML.indexOf('ДЕНЬ') >= 0 &&
+      document.getElementById('fragbar').innerHTML.indexOf('ПРАКТИКА') >= 0 &&
       document.getElementById('fragbar').innerHTML.indexOf('ФРАГМЕНТ') < 0);
   chk('статус миссии 1 помечен ✔', document.getElementById('st1').textContent.indexOf('✔') >= 0,
       document.getElementById('st1').textContent);
   chk('статус миссии 6 помечен ✔', document.getElementById('st6').textContent.indexOf('✔') >= 0);
   chk('статус миссии 10 помечен ✔', document.getElementById('st10').textContent.indexOf('✔') >= 0);
+  chk('статус миссии 20 помечен ✔', document.getElementById('st20').textContent.indexOf('✔') >= 0);
   chk('таймер продолжает идти', /⏱ \d{2}:\d{2}/.test(document.getElementById('timer').textContent),
       document.getElementById('timer').textContent);
   chk('личный код сохранён', /^KB-\d{6}$/.test(S.code), S.code);
   chk('карточки навигации отмечены пройденными',
-      document.getElementById('mnav').innerHTML.split('finished').length - 1 === 10);
+      document.getElementById('mnav').innerHTML.split('finished').length - 1 === 20);
   var d = document.createElement('pre');
   d.id = 'TESTLOG';
   d.textContent = '<<<' + log.join(' ||| ') + '>>>';

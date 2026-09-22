@@ -1708,6 +1708,573 @@ function h11mark(i){
   }
 }
 
+/* ================== МИССИЯ 12: заголовки письма ================== */
+var H12_ROWS = [
+  {t:'<b>Delivered-To:</b> student@college.edu'},
+  {t:'<b>Return-Path:</b> &lt;bounce@notify-secure-login.ru&gt;', bad:true},
+  {t:'<b>From:</b> "Служба безопасности СБЕР77" &lt;security@sberbank.ru&gt;'},
+  {t:'<b>Reply-To:</b> support@verify-account.xyz', bad:true},
+  {t:'<b>Authentication-Results:</b> college.edu; spf=fail; dkim=none; dmarc=fail (p=quarantine)', bad:true},
+  {t:'<b>Date:</b> Fri, 3 Oct 2026 09:41:02 +0300'},
+  {t:'<b>Subject:</b> Срочная верификация: ваш аккаунт будет заблокирован'},
+  {t:'<b>X-Mailer:</b> PHPMailer 6.8.0'}
+];
+var H12_SEL = {};
+function h12count(){ var c = 0; for(var k in H12_SEL){ if(H12_SEL[k]) c++; } return c; }
+function h12init(){
+  H12_SEL = {};
+  var h = '';
+  for(var i=0;i<H12_ROWS.length;i++){
+    h += '<div class="rowitem" data-h="' + i + '"><div class="txt">' + H12_ROWS[i].t + '</div>' +
+         '<span class="mini" id="h12mk' + i + '">—</span></div>';
+  }
+  $('h12wrap').innerHTML = h;
+  var rows = [], all = $('h12wrap').getElementsByClassName('rowitem');
+  for(var j=0;j<all.length;j++) rows.push(all[j]);
+  for(var k=0;k<rows.length;k++){ rows[k].onclick = function(){ h12toggle(this); }; }
+  $('m12check').onclick = h12check;
+  $('st12').textContent = '0 из 3 признаков';
+  $('m12err').style.display = 'none';
+}
+function h12toggle(el){
+  if(S.done.m12) return;
+  var i = el.getAttribute('data-h');
+  if(H12_SEL[i]){
+    delete H12_SEL[i];
+    el.className = 'rowitem';
+    $('h12mk' + i).textContent = '—';
+  } else {
+    H12_SEL[i] = true;
+    el.className = 'rowitem sel';
+    $('h12mk' + i).textContent = '✓ отмечено';
+  }
+  var c = h12count();
+  $('st12').textContent = c + ' из 3 признаков';
+  $('st12').className = 'status' + (c === 3 ? ' ok' : '');
+}
+function h12check(){
+  if(S.done.m12) return;
+  var err = $('m12err'), wrong = 0, missed = 0;
+  for(var i=0;i<H12_ROWS.length;i++){
+    var on = !!H12_SEL[i];
+    if(on && !H12_ROWS[i].bad) wrong++;
+    if(!on && H12_ROWS[i].bad) missed++;
+  }
+  if(h12count() !== 3){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Нужно отметить ровно <b>3</b> строки, а отмечено ' + h12count() + '.';
+    return;
+  }
+  if(wrong === 0 && missed === 0){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Точно! Все три следа найдены.</b> Домен возврата и домен ответа принадлежат ' +
+      'мошенникам (notify-secure-login.ru, verify-account.xyz), а проверки SPF, DKIM и DMARC ' +
+      'провалены — письмо отправлено не с серверов банка. Строка «От кого» подделывается за минуту, ' +
+      'поэтому доказательством служить не может.';
+    $('st12').className = 'status ok';
+    complete('m12');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Пока не так: лишних отметок — <b>' + wrong + '</b>, пропущено — <b>' + missed + '</b>.';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 13: аудит настроек сервера ================== */
+var A13 = [
+  {t:'Вход root по SSH', v:'PermitRootLogin yes', bad:true, why:'злоумышленник подбирает пароль главного аккаунта напрямую'},
+  {t:'Шифрование диска', v:'LUKS включено', bad:false, why:'данные защищены, даже если диск украдут'},
+  {t:'Журналы аудита', v:'auditd = disabled', bad:true, why:'без журналов взлом не оставит следов'},
+  {t:'Пароль администратора', v:'длина 14, разные символы', bad:false, why:'сильный пароль менять не нужно'},
+  {t:'Пароль администратора', v:'Qwerty123!', bad:true, why:'он есть в словарях взлома и подбирается за секунды'},
+  {t:'Доступ по SSH', v:'только по ключам', bad:false, why:'пароли не принимаются — это правильно'},
+  {t:'Firewall', v:'ufw inactive', bad:true, why:'все порты открыты сети, в том числе служебные'},
+  {t:'Автообновления безопасности', v:'unattended-upgrades = on', bad:false, why:'обновления уже включены'},
+  {t:'Резервные копии', v:'на тот же диск, раз в неделю', bad:true, why:'при поломке диска или шифровальщике пропадёт и копия'},
+  {t:'Журналы аудита', v:'auditd = enabled', bad:false, why:'журналы уже ведутся'},
+  {t:'Firewall', v:'ufw active, открыт только 443', bad:false, why:'нужный порт открыт, остальное закрыто'},
+  {t:'Автообновления безопасности', v:'unattended-upgrades = off', bad:true, why:'сервер остаётся с известными уязвимостями'}
+];
+var A13_DONE = {}, A13_OKN = 0;
+function a13init(){
+  A13_DONE = {}; A13_OKN = 0;
+  var h = '';
+  for(var i=0;i<A13.length;i++){
+    h += '<div class="rowitem" id="a13row' + i + '">' +
+           '<div class="txt"><b>' + A13[i].t + '</b>: <code>' + A13[i].v + '</code></div>' +
+           '<button class="btn small" data-a="' + i + '">🔧 Исправить</button>' +
+         '</div>';
+  }
+  $('a13wrap').innerHTML = h;
+  var btns = [], all = $('a13wrap').getElementsByTagName('button');
+  for(var j=0;j<all.length;j++) btns.push(all[j]);
+  for(var k=0;k<btns.length;k++){
+    btns[k].onclick = function(){ a13fix(parseInt(this.getAttribute('data-a'), 10)); };
+  }
+  $('st13').textContent = 'исправлено 0 из 6';
+  $('m13err').style.display = 'none';
+}
+function a13fix(i){
+  if(S.done.m13 || A13_DONE[i]) return;
+  var row = $('a13row' + i), err = $('m13err');
+  A13_DONE[i] = true;
+  if(row){
+    row.className = 'rowitem fixed';
+    var btn = row.getElementsByTagName('button')[0];
+    if(btn){ btn.textContent = '✔ Исправлено'; btn.disabled = true; }
+  }
+  if(A13[i].bad){
+    A13_OKN++;
+    err.className = 'okmsg';
+    err.style.display = 'block';
+    err.innerHTML = '<b>Верно исправлено:</b> ' + A13[i].t + ' (' + A13[i].v + ') — ' + A13[i].why + '.';
+    if(A13_OKN >= 6){
+      $('st13').textContent = 'исправлено 6 из 6';
+      $('st13').className = 'status ok';
+      complete('m13');
+    } else {
+      $('st13').textContent = 'исправлено ' + A13_OKN + ' из 6';
+    }
+  } else {
+    err.className = 'errmsg';
+    err.style.display = 'block';
+    err.innerHTML = 'Лишнее исправление: «' + A13[i].t + ': ' + A13[i].v + '» — ' + A13[i].why + ' (−2 очка)';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 14: цепочка атаки ================== */
+/* порядок в массиве = порядок на экране (перемешан); хронология задаётся pos */
+var H14_EV = [
+  {t:'🔗 Вредонос закрепился в системе (прописался в автозапуск)', pos:4},
+  {t:'📩 Сотруднику пришло письмо «Ведомость на зарплату.exe»', pos:1},
+  {t:'📤 Массив документов выгружен наружу, зашифрован и удалён с сервера', pos:6},
+  {t:'🧲 Вложение запущено: сработал макрос, установился загрузчик', pos:2},
+  {t:'🔑 Повышение прав: взломан пароль администратора, собраны данные', pos:5},
+  {t:'📡 Загрузчик связался с сервером злоумышленника', pos:3}
+];
+var H14_ORDER = [];
+function h14init(){
+  H14_ORDER = [];
+  var h = '';
+  for(var i=0;i<H14_EV.length;i++){
+    h += '<button class="orderbtn" data-o="' + i + '"><span class="badge" id="h14b' + i + '">–</span>' +
+         '<span>' + H14_EV[i].t + '</span></button>';
+  }
+  $('h14wrap').innerHTML = h;
+  var btns = [], all = $('h14wrap').getElementsByClassName('orderbtn');
+  for(var j=0;j<all.length;j++) btns.push(all[j]);
+  for(var k=0;k<btns.length;k++){
+    btns[k].onclick = function(){ h14pick(parseInt(this.getAttribute('data-o'), 10)); };
+  }
+  $('m14check').onclick = h14check;
+  $('m14reset').onclick = function(){ if(!S.done.m14) h14init(); };
+  $('m14err').style.display = 'none';
+}
+function h14pick(i){
+  if(S.done.m14) return;
+  var at = H14_ORDER.indexOf(i);
+  if(at >= 0) H14_ORDER.splice(at, 1);
+  else H14_ORDER.push(i);
+  var all = $('h14wrap').getElementsByClassName('orderbtn');
+  for(var j=0;j<all.length;j++){
+    var pos = H14_ORDER.indexOf(j);
+    var b = $('h14b' + j);
+    if(b) b.textContent = (pos >= 0) ? (pos + 1) : '–';
+    all[j].className = 'orderbtn' + (pos >= 0 ? ' picked' : '');
+  }
+}
+function h14check(){
+  if(S.done.m14) return;
+  var err = $('m14err');
+  if(H14_ORDER.length < H14_EV.length){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Пронумеровано событий: <b>' + H14_ORDER.length + '</b> из ' + H14_EV.length + '. Расставь все.';
+    return;
+  }
+  var ok = true;
+  for(var i=0;i<H14_ORDER.length;i++){
+    if(H14_EV[H14_ORDER[i]].pos !== (i + 1)) ok = false;
+  }
+  if(ok){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Хронология восстановлена верно!</b> Письмо → запуск вложения → связь с сервером ' +
+      'злоумышленника → закрепление в системе → повышение прав и сбор данных → выгрузка. ' +
+      'Разбор цепочки показывает, где атаку можно было остановить: фильтр вложений, запрет макросов, ' +
+      'журналы и ограничение прав.';
+    complete('m14');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Порядок пока неверный. Подсказка: атака начинается с письма и заканчивается выгрузкой данных.';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 15: крипто-инструменты ================== */
+var T15_TOOLS = [
+  'Симметричное шифрование (AES)',
+  'Асимметричное шифрование (RSA)',
+  'Хеш-функция (SHA-256)',
+  'Электронная подпись (ЭЦП)'
+];
+var T15_TASKS = [
+  {t:'Зашифровать весь учебный архив (20 ГБ) быстро и надёжно', a:0},
+  {t:'Безопасно передать ключ шифрования через открытый интернет', a:1},
+  {t:'Проверить, что скачанный ISO-образ не был изменён', a:2},
+  {t:'Хранить пароли пользователей так, чтобы их нельзя было узнать', a:2},
+  {t:'Гарантировать авторство и неизменность отправленного договора', a:3},
+  {t:'Массово шифровать трафик между серверами при высокой нагрузке', a:0}
+];
+function t15init(){
+  var h = '';
+  for(var i=0;i<T15_TASKS.length;i++){
+    h += '<div class="rowitem"><div class="txt"><b>' + (i+1) + '.</b> ' + T15_TASKS[i].t + '</div>' +
+         '<div><select class="tool" id="t15sel' + i + '">' +
+         '<option value="-1">— выбери —</option>';
+    for(var o=0;o<T15_TOOLS.length;o++) h += '<option value="' + o + '">' + T15_TOOLS[o] + '</option>';
+    h += '</select></div></div>';
+  }
+  $('c15wrap').innerHTML = h;
+  $('m15check').onclick = t15check;
+  $('st15').textContent = '0 из 6 задач';
+  $('m15err').style.display = 'none';
+}
+function t15check(){
+  if(S.done.m15) return;
+  var err = $('m15err'), right = 0, empty = 0;
+  for(var i=0;i<T15_TASKS.length;i++){
+    var v = parseInt($('t15sel' + i).value, 10);
+    if(v < 0) empty++;
+    else if(v === T15_TASKS[i].a) right++;
+  }
+  $('st15').textContent = right + ' из ' + T15_TASKS.length + ' задач';
+  if(empty > 0){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Не заполнено задач: <b>' + empty + '</b>.';
+    return;
+  }
+  if(right === T15_TASKS.length){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Все шесть — верно!</b> Асимметричное шифрование решает проблему обмена ключом, ' +
+      'симметричное быстро шифрует большие объёмы, хеш даёт отпечаток для целостности и хранения паролей, ' +
+      'а ЭЦП подтверждает авторство и неизменность документа.';
+    $('st15').className = 'status ok';
+    complete('m15');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Верно <b>' + right + '</b> из ' + T15_TASKS.length + '. Исправь остальные и проверь снова.';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 16: стеганография (акростих) ================== */
+var M16_ANS = [1053,1045,1047,1041,1040,1057,1052,1040,1052,1052]; /* Н Е З Б А С Л А Л Л */
+var M16_WORD = 'НЕЗБАСМАММ'; /* появится в отчёте README */
+var H16_LINES = [
+  'Ночные отчёты департамента изучены.',
+  'Все дубликаты записей сверены.',
+  'Задания исполнены в срок.',
+  'Бюджет израсходован верно.',
+  'Аудит прошёл без замечаний.',
+  'Сведения о поставщиках обновлены.',
+  'Материалы переданы в архив.',
+  'Аппаратура опечатана.',
+  'Мероприятия согласованы.',
+  'Мелких недочётов нет.'
+];
+function m16norm(s){
+  return s.replace(/[\u0430-\u044F\u0451]/g, function(c){
+    return String.fromCharCode(c.charCodeAt(0) - 32);
+  }).toUpperCase();
+}
+function h16init(){
+  var h = '';
+  for(var i=0;i<H16_LINES.length;i++) h += '<div>▸ ' + H16_LINES[i] + '</div>';
+  $('h16text').innerHTML = h;
+  $('m16check').onclick = m16check;
+  $('m16answer').addEventListener('keydown', function(e){ if(e.key === 'Enter') m16check(); });
+  $('m16err').style.display = 'none';
+}
+function m16check(){
+  if(S.done.m16) return;
+  var err = $('m16err'), val = m16norm($('m16answer').value).replace(/\s+/g, '');
+  if(val === M16_WORD){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Послание найдено!</b> Первые буквы строк складываются в кодовое слово. ' +
+      'Так работает акростих — древнейшая стеганография: сообщение прячется в самом безобидном тексте. ' +
+      'В цифровом мире то же самое делают пиксели картинок и паузы в аудио.';
+    complete('m16');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Не то слово. Прочитай записку внимательно — по одной букве из каждой строки.';
+    addScore(-2);
+    toast('❌ Неверно. Ищи слово «по краю» текста.', true);
+  }
+}
+
+/* ================== МИССИЯ 17: SQL-инъекция в логе ================== */
+var W17_ROWS = [
+  {t:'GET /catalog?id=15', bad:false},
+  {t:'GET /catalog?id=15 OR 1=1 --', bad:true},
+  {t:'GET /login?user=ivan&pass=123', bad:false},
+  {t:'GET /search?q=%27 UNION SELECT login, pass FROM users --', bad:true},
+  {t:'GET /news?page=3', bad:false},
+  {t:'GET /api?sleep(5)--waitfor delay 0:0:5--', bad:true}
+];
+var W17_SEL = {};
+function w17count(){ var c = 0; for(var k in W17_SEL){ if(W17_SEL[k]) c++; } return c; }
+var W17_FIXES = [
+  'Экранировать кавычки и блокировать слова UNION, SELECT, OR',
+  'Использовать параметризованные запросы (prepared statements)',
+  'Ограничить длину запроса до 20 символов'
+];
+function w17init(){
+  W17_SEL = {};
+  var h = '';
+  for(var i=0;i<W17_ROWS.length;i++){
+    h += '<div class="rowitem" data-w="' + i + '"><div class="txt">' + W17_ROWS[i].t + '</div>' +
+         '<span class="mini" id="w17mk' + i + '">—</span></div>';
+  }
+  $('w17wrap').innerHTML = h;
+  var rows = [], all = $('w17wrap').getElementsByClassName('rowitem');
+  for(var j=0;j<all.length;j++) rows.push(all[j]);
+  for(var k=0;k<rows.length;k++){ rows[k].onclick = function(){ w17toggle(this); }; }
+  var fh = '';
+  for(var f=0;f<W17_FIXES.length;f++){
+    fh += '<label class="rowitem" style="cursor:pointer"><input type="radio" name="w17fix" value="' + f + '"' +
+          (f === 1 ? ' checked' : '') + '> <span>' + W17_FIXES[f] + '</span></label>';
+  }
+  $('w17fix').innerHTML = fh;
+  $('m17check').onclick = w17check;
+  $('st17').textContent = '0 из 3 запросов';
+  $('m17err').style.display = 'none';
+}
+function w17toggle(el){
+  if(S.done.m17) return;
+  var i = el.getAttribute('data-w');
+  if(W17_SEL[i]){
+    delete W17_SEL[i];
+    el.className = 'rowitem';
+    $('w17mk' + i).textContent = '—';
+  } else {
+    W17_SEL[i] = true;
+    el.className = 'rowitem sel';
+    $('w17mk' + i).textContent = '✓ подозрительно';
+  }
+  $('st17').textContent = w17count() + ' из 3 запросов';
+}
+function w17check(){
+  if(S.done.m17) return;
+  var err = $('m17err'), wrong = 0, missed = 0, fix = -1;
+  var radios = document.getElementsByName('w17fix');
+  for(var r=0;r<radios.length;r++){ if(radios[r].checked) fix = parseInt(radios[r].value, 10); }
+  for(var i=0;i<W17_ROWS.length;i++){
+    var on = !!W17_SEL[i];
+    if(on && !W17_ROWS[i].bad) wrong++;
+    if(!on && W17_ROWS[i].bad) missed++;
+  }
+  if(w17count() !== 3){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Нужно отметить ровно <b>3</b> строки, а отмечено ' + w17count() + '.';
+    return;
+  }
+  if(wrong === 0 && missed === 0 && fix === 1){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Отлично! Все три атаки распознаны, защита выбрана верно.</b> ' +
+      'Классическое экранирование ловит только известные шаблоны и обходится изменением регистра ' +
+      'или кодировки, а ограничение длины ломает обычные запросы. Единственная надёжная защита — ' +
+      '<b>параметризованные запросы</b>: данные не смешиваются с SQL-кодом.';
+    complete('m17');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Пока не так: лишних строк — <b>' + wrong + '</b>, пропущено — <b>' + missed + '</b>, ' +
+      (fix !== 1 ? 'защита выбрана неверно.' : 'строки отмечены неверно.');
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 18: оценка риска ================== */
+var R18 = [
+  {t:'🔥 Ransomware шифрует сервер с оценками', p:5, d:5},
+  {t:'💾 Поломка старого жесткого диска в кабинете информатики', p:3, d:2},
+  {t:'🎣 Фишинговая рассылка на сотрудников', p:5, d:3},
+  {t:'🌧 Затопление серверной из-за прорыва трубы', p:2, d:5}
+];
+var R18_DONE = {}, R18_USED = {};
+function r18init(){
+  R18_DONE = {}; R18_USED = {};
+  var h = '';
+  for(var i=0;i<R18.length;i++){
+    h += '<div class="rowitem"><div class="txt"><b>' + R18[i].t + '</b>' +
+         '<div class="mini">вероятность ' + R18[i].p + ' × ущерб ' + R18[i].d + ' = ' + (R18[i].p * R18[i].d) + '</div></div>' +
+         '<div><select class="tool" id="r18sel' + i + '"><option value="-1">—</option>';
+    for(var o=1;o<=4;o++) h += '<option value="' + o + '">Приоритет ' + o + '</option>';
+    h += '</select></div></div>';
+  }
+  $('r18wrap').innerHTML = h;
+  $('m18check').onclick = r18check;
+  $('m18err').style.display = 'none';
+}
+function r18check(){
+  if(S.done.m18) return;
+  var err = $('m18err'), vals = [], empty = 0;
+  for(var i=0;i<R18.length;i++){
+    var v = parseInt($('r18sel' + i).value, 10);
+    if(v < 0) empty++;
+    vals.push(v);
+  }
+  if(empty > 0){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Расставь все <b>4</b> приоритета, осталось: ' + empty + '.';
+    return;
+  }
+  var uniq = {};
+  for(var j=0;j<vals.length;j++) uniq[vals[j]] = true;
+  if(Object.keys(uniq).length !== 4){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Каждый приоритет используется <b>ровно один раз</b>.';
+    return;
+  }
+  /* сортировка по произведению по убыванию — ожидаемый порядок */
+  var want = R18.map(function(r, i){ return {i:i, s:r.p * r.d}; })
+                .sort(function(a, b){ return b.s - a.s; })
+                .map(function(x){ return x.i; });
+  var ok = true;
+  for(var k=0;k<4;k++){ if(vals[want[k]] !== (k + 1)) ok = false; }
+  if(ok){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>Верно! Приоритеты расставлены правильно.</b> Шифровальщик (25) опаснее фишинга (15), ' +
+      'тот — опаснее затопления (10), а поломка диска (6) закрывается последней. Так работает матрица ' +
+      'рисков «вероятность × ущерб» — ею пользуются настоящие отделы ИБ.';
+    complete('m18');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Есть ошибки. Считай произведение «вероятность × ущерб» для каждого риска.';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 19: Wi-Fi evil twin ================== */
+var N19 = [
+  {n:'COFFEE_FREE', s:'🔓 Открытая', sig:'▂▄▆', bad:true, why:'Весь трафик в открытой сети видят все вокруг.'},
+  {n:'College_WiFi', s:'🔒 WPA2', sig:'▂▄▆', bad:true, why:'Пароль сети известен многим, а подтверждение личности не требуется. Легко клонируется.'},
+  {n:'College_WiFi_5G_Invited', s:'🔓 Открытая', sig:'▂▄▆█', bad:true, why:'Похожее название на оригинал — типичный признак Evil Twin (двойника).'},
+  {n:'CAMPUS-CORP', s:'🔐 WPA3-Enterprise', sig:'▂▄▆█', bad:false, why:'WPA3 + Enterprise требует логина и сертификата колледжа — подделать её почти невозможно.'}
+];
+function n19init(){
+  var h = '';
+  for(var i=0;i<N19.length;i++){
+    h += '<div class="wifinet" data-n="' + i + '">' +
+           '<span class="sig">' + N19[i].sig + '</span>' +
+           '<span class="nm">' + N19[i].n + '</span>' +
+           '<span class="mini">' + N19[i].s + '</span>' +
+         '</div>';
+  }
+  $('n19wrap').innerHTML = h;
+  var nets = [], all = $('n19wrap').getElementsByClassName('wifinet');
+  for(var j=0;j<all.length;j++) nets.push(all[j]);
+  for(var k=0;k<nets.length;k++){
+    nets[k].onclick = function(){ n19pick(parseInt(this.getAttribute('data-n'), 10), this); };
+  }
+  $('m19err').style.display = 'none';
+  $('m19result').style.display = 'none';
+}
+function n19pick(i, el){
+  if(S.done.m19) return;
+  var res = $('m19result'), err = $('m19err');
+  res.style.display = 'none';
+  if(N19[i].bad){
+    el.className = 'wifinet rejected';
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>' + N19[i].n + '</b> — небезопасный вариант. ' + N19[i].why;
+    addScore(-2);
+  } else {
+    el.className = 'wifinet chosen';
+    res.style.display = 'block';
+    res.innerHTML = '<b>Верный выбор!</b> ' + N19[i].why;
+    complete('m19');
+  }
+}
+
+/* ================== МИССИЯ 20: экзамен ================== */
+var E20 = [
+  {q:'Файл скачан, хеш совпал с официальным. Что это значит?',
+   a:['Файл точно рабочий, но мог быть изменён',
+      'Содержимое файла не изменилось ни на один бит',
+      'Файл проверен антивирусом'], c:1},
+  {q:' SPF, DKIM и DMARC — что они доказывают?',
+   a:['Что письмо не прочитают посторонние',
+      'Что домен отправителя подлинный',
+      'Что в письме нет вируса'], c:1},
+  {q:'Лучшая защита веб-приложения от SQL-инъекций:',
+   a:['Параметризованные запросы (prepared statements)',
+      'Чёрный список слов UNION и SELECT',
+      'Скрыть сообщения об ошибках базы'], c:0},
+  {q:'Правило 3-2-1 для резервных копий означает:',
+   a:['3 копии, 2 разных носителя, 1 вне офиса',
+      '3 пароля, 2 аккаунта, 1 администратор',
+      'Обновление 3 раза в неделю'], c:0},
+  {q:'Звонок «из техподдержки банка»: назовите код из СМС. Ваши действия:',
+   a:['Продиктовать, раз это банк',
+      'Продиктовать только две цифры',
+      'Не диктовать никому и перезвонить по официальному номеру'], c:2},
+  {q:'Какой риск закрывают первым при матрице «вероятность × ущерб»?',
+   a:['С наибольшим произведением',
+      'С самой большой вероятностью',
+      'Который дешевле устранить'], c:0},
+  {q:'Подключаться к открытой Wi-Fi сети кафе опасно, потому что:',
+   a:['Там медленный интернет',
+      'Трафик могут перехватывать, а точка может быть подделкой',
+      'Телефон разрядится быстрее'], c:1},
+  {q:'На компьютере лаборатории замечена активность вируса. Первое действие:',
+   a:['Отключить сеть и сообщить специалисту ИБ',
+      'Продолжить работу до конца пары',
+      'Выключить антивирус, чтобы не мешал'], c:0}
+];
+function e20init(){
+  var h = '';
+  for(var i=0;i<E20.length;i++){
+    h += '<div class="qblock" id="e20q' + i + '"><p class="qt">' + (i+1) + '. ' + E20[i].q + '</p>';
+    for(var o=0;o<E20[i].a.length;o++){
+      h += '<label style="display:block;cursor:pointer;margin:3px 0">' +
+           '<input type="radio" name="e20q' + i + '" value="' + o + '"> ' + E20[i].a[o] + '</label>';
+    }
+    h += '</div>';
+  }
+  $('e20wrap').innerHTML = h;
+  $('m20check').onclick = e20check;
+  $('m20err').style.display = 'none';
+}
+function e20check(){
+  if(S.done.m20) return;
+  var err = $('m20err'), right = 0, empty = 0;
+  for(var i=0;i<E20.length;i++){
+    var q = $('e20q' + i), v = -1;
+    var radios = document.getElementsByName('e20q' + i);
+    for(var r=0;r<radios.length;r++){ if(radios[r].checked) v = parseInt(radios[r].value, 10); }
+    if(v < 0) empty++;
+    if(v === E20[i].c) right++;
+    q.className = 'qblock' + (v < 0 ? '' : (v === E20[i].c ? ' ok' : ' bad'));
+  }
+  $('st20').textContent = right + ' из 8 верно';
+  if(empty > 0){
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Ответь на все вопросы, не отвечено: <b>' + empty + '</b>.';
+    return;
+  }
+  if(right === E20.length){
+    err.className = 'okmsg'; err.style.display = 'block';
+    err.innerHTML = '<b>8 из 8 — экзамен сдан на отлично!</b> Ты подтвердил весь курс: от паролей и фишинга ' +
+      'до шифрования, инъекций и реагирования на инциденты. Финальный фрагмент кода получен.';
+    $('st20').className = 'status ok';
+    complete('m20');
+  } else {
+    err.className = 'errmsg'; err.style.display = 'block';
+    err.innerHTML = 'Верно <b>' + right + '</b> из 8. Неверные вопросы подсвечены — исправь и проверь снова (−2 за попытку).';
+    addScore(-2);
+  }
+}
+
 /* ================== ЗАПУСК И ОБЩИЕ ОБРАБОТЧИКИ ================== */
 function markAct(){ lastAct = new Date().getTime(); }
 
@@ -1783,6 +2350,46 @@ function init(){
   s10init();
   wireHint('m10hint', 'm10hintbox', 'm10');
 
+  /* Миссия 11: хеш и целостность */
+  h11init();
+  wireHint('m11hint', 'm11hintbox', 'm11');
+
+  /* Миссия 12: заголовки письма */
+  h12init();
+  wireHint('m12hint', 'm12hintbox', 'm12');
+
+  /* Миссия 13: аудит настроек */
+  a13init();
+  wireHint('m13hint', 'm13hintbox', 'm13');
+
+  /* Миссия 14: цепочка атаки */
+  h14init();
+  wireHint('m14hint', 'm14hintbox', 'm14');
+
+  /* Миссия 15: крипто-инструменты */
+  t15init();
+  wireHint('m15hint', 'm15hintbox', 'm15');
+
+  /* Миссия 16: стеганография */
+  h16init();
+  wireHint('m16hint', 'm16hintbox', 'm16');
+
+  /* Миссия 17: SQL-инъекция */
+  w17init();
+  wireHint('m17hint', 'm17hintbox', 'm17');
+
+  /* Миссия 18: оценка риска */
+  r18init();
+  wireHint('m18hint', 'm18hintbox', 'm18');
+
+  /* Миссия 19: Wi-Fi evil twin */
+  n19init();
+  wireHint('m19hint', 'm19hintbox', 'm19');
+
+  /* Миссия 20: экзамен */
+  e20init();
+  wireHint('m20hint', 'm20hintbox', 'm20');
+
   restoreDone();
 
   /* сертификат и общие кнопки */
@@ -1815,7 +2422,7 @@ function init(){
   setInterval(watchStuck, 20000);
 
   if(restored){
-    toast('💾 Прогресс восстановлен: миссий пройдено ' + doneCount() + ' из 5, очки: ' + S.score + '.');
+    toast('💾 Прогресс восстановлен: миссий пройдено ' + doneCount() + ' из 20, очки: ' + S.score + '.');
   }
 }
 

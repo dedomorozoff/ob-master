@@ -139,6 +139,97 @@ window.addEventListener('load', function(){
     document.getElementById('m10check').click();
     chk('миссия 10: верный ответ засчитан', S.done.m10 === true);
 
+    /* --- миссия 11: хеш и подмена файла --- */
+    var h11hashbtn = document.querySelector('#h11wrap button[data-h="2"]');
+    h11hashbtn.onclick();
+    chk('миссия 11: хеш подменённого файла показан и подсвечен',
+        document.getElementById('h11hash2').className.indexOf('mismatch') >= 0);
+    var h11rows = document.getElementById('h11wrap').getElementsByClassName('rowitem');
+    var h11bad = null;
+    for(var h11i = 0; h11i < h11rows.length; h11i++){
+      var btns2 = h11rows[h11i].getElementsByTagName('button');
+      for(var h11b = 0; h11b < btns2.length; h11b++){
+        if(btns2[h11b].getAttribute('data-b') !== null && btns2[h11b].getAttribute('data-b') === '2') h11bad = btns2[h11b];
+      }
+    }
+    h11bad.onclick();
+    chk('миссия 11: подменённый файл найден', S.done.m11 === true);
+
+    /* --- миссия 12: заголовки письма --- */
+    var h12rows = document.getElementById('h12wrap').getElementsByClassName('rowitem');
+    ['1','3','4'].forEach(function(hn){ h12rows[hn].onclick(); });
+    document.getElementById('m12check').click();
+    chk('миссия 12: три доказательства подделки найдены', S.done.m12 === true);
+
+    /* --- миссия 13: аудит настроек --- */
+    for(var a13e = 0; a13e < A13.length; a13e++){
+      var a13btns = document.getElementById('a13row' + a13e).getElementsByTagName('button');
+      a13btns[0].onclick();
+    }
+    chk('миссия 13: все 6 опасных настроек исправлены', S.done.m13 === true);
+
+    /* --- миссия 14: цепочка атаки --- */
+    var h14ord = [];
+    for(var h14p2 = 1; h14p2 <= H14_EV.length; h14p2++){
+      for(var h14j2 = 0; h14j2 < H14_EV.length; h14j2++){
+        if(H14_EV[h14j2].pos === h14p2) h14ord.push(h14j2);
+      }
+    }
+    h14ord.forEach(function(oi){
+      document.querySelector('#h14wrap .orderbtn[data-o="' + oi + '"]').onclick();
+    });
+    document.getElementById('m14check').click();
+    chk('миссия 14: хронология восстановлена', S.done.m14 === true);
+
+    /* --- миссия 15: крипто-инструменты --- */
+    for(var t15e = 0; t15e < T15_TASKS.length; t15e++){
+      document.getElementById('t15sel' + t15e).value = String(T15_TASKS[t15e].a);
+    }
+    document.getElementById('m15check').click();
+    chk('миссия 15: инструменты подобраны верно', S.done.m15 === true);
+
+    /* --- миссия 16: стеганография --- */
+    document.getElementById('m16answer').value = M16_ANS.map(function(cc){ return String.fromCharCode(cc); }).join('');
+    document.getElementById('m16check').click();
+    chk('миссия 16: акростих разгадан', S.done.m16 === true);
+
+    /* --- миссия 17: SQL-инъекция --- */
+    var w17rows = document.getElementById('w17wrap').getElementsByClassName('rowitem');
+    ['1','3','5'].forEach(function(wn){ w17rows[wn].onclick(); });
+    document.getElementById('m17check').click();
+    chk('миссия 17: инъекции найдены, защита выбрана', S.done.m17 === true);
+
+    /* --- миссия 18: оценка риска --- */
+    (function(){
+      var want2 = R18.map(function(r, i2){ return {i:i2, s:r.p * r.d}; })
+                      .sort(function(a2, b2){ return b2.s - a2.s; })
+                      .map(function(x2){ return x2.i; });
+      for(var k2 = 0; k2 < 4; k2++) document.getElementById('r18sel' + want2[k2]).value = String(k2 + 1);
+    })();
+    document.getElementById('m18check').click();
+    chk('миссия 18: приоритеты расставлены', S.done.m18 === true);
+
+    /* --- миссия 19: Wi-Fi --- */
+    var nets = document.getElementById('n19wrap').getElementsByClassName('wifinet');
+    nets[0].onclick();
+    chk('миссия 19: открытая сеть не принята', S.done.m19 !== true);
+    nets[3].onclick();
+    chk('миссия 19: WPA3-Enterprise выбрана', S.done.m19 === true);
+
+    /* --- миссия 20: экзамен --- */
+    for(var e20e = 0; e20e < E20.length; e20e++){
+      var qr = document.querySelectorAll('input[name="e20q' + e20e + '"]');
+      for(var e20r = 0; e20r < qr.length; e20r++){
+        if(qr[e20r].value === String(E20[e20e].c)) qr[e20r].checked = true;
+      }
+    }
+    document.getElementById('m20check').click();
+    chk('миссия 20: экзамен сдан 8 из 8', S.done.m20 === true);
+
+    chk('экспертный финал открылся',
+        document.getElementById('finalbox').style.display === 'block' &&
+        document.getElementById('finaltitle').innerHTML.indexOf('ЭКСПЕРТ') >= 0);
+
     chk('финальный блок открылся', document.getElementById('finalbox').style.display === 'block');
     chk('фраза-итог собрана',
         document.getElementById('codephraseOut').innerHTML.indexOf('ПРОДУКТ') >= 0);
@@ -147,20 +238,21 @@ window.addEventListener('load', function(){
     document.getElementById('certbtn').click();
     chk('сертификат показан', document.getElementById('cert').style.display === 'block');
     chk('сертификат на нужное ФИО', document.getElementById('certname').textContent === 'Тестов Тест');
-    chk('очки = 189 (200 − 5 за подсказку − 6 за три ошибки)', S.score === 189, S.score);
+    chk('очки = 375 (400 − 5 за подсказку − 20 за ошибки и штрафы)', S.score === 375, S.score);
     chk('прогресс-бар на 100%', document.getElementById('progbar').style.width === '100%',
         document.getElementById('progbar').style.width);
-    chk('в шапке максимум 200 очков', document.getElementById('scoretotal').textContent === '200',
+    chk('в шапке максимум 400 очков', document.getElementById('scoretotal').textContent === '400',
         document.getElementById('scoretotal').textContent);
-    chk('в навигации 10 карточек',
-        document.getElementById('mnav').getElementsByClassName('mcard').length === 10,
+    chk('в навигации 20 карточек',
+        document.getElementById('mnav').getElementsByClassName('mcard').length === 20,
         document.getElementById('mnav').getElementsByClassName('mcard').length);
-    chk('все 10 карточек помечены пройденными',
-        document.getElementById('mnav').innerHTML.split('finished').length - 1 === 10);
+    chk('все 20 карточек помечены пройденными',
+        document.getElementById('mnav').innerHTML.split('finished').length - 1 === 20);
     chk('все окна успеха показаны',
-        ['m1ok','m2ok','m3ok','m4ok','m5ok','m6ok','m7ok','m8ok','m9ok','m10ok'].every(function(id){
+        ['m1ok','m2ok','m3ok','m4ok','m5ok','m6ok','m7ok','m8ok','m9ok','m10ok',
+         'm11ok','m12ok','m13ok','m14ok','m15ok','m16ok','m17ok','m18ok','m19ok','m20ok'].every(function(id){
           return document.getElementById(id).style.display === 'block'; }));
-    chk('в сертификате проставлены очки', document.getElementById('certscore').textContent === '189',
+    chk('в сертификате проставлены очки', document.getElementById('certscore').textContent === '375',
         document.getElementById('certscore').textContent);
   } catch(e){
     log.push('FAIL :: исключение: ' + e.message);
