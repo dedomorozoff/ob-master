@@ -1,0 +1,174 @@
+<script>
+window.addEventListener('load', function(){
+  var log = [];
+  function chk(n, c, extra){ log.push((c ? 'PASS' : 'FAIL') + ' :: ' + n + (extra !== undefined ? ' -> ' + extra : '')); }
+  try{
+    document.getElementById('startbtn').click();
+    chk('брифинг: операция стартует', S.started === true);
+
+    var pw = document.getElementById('pwin');
+    pw.value = 'Гвоздика-Монитор-77!';
+    pw.oninput();
+    chk('миссия 1 засчитана через ввод пароля', S.done.m1 === true);
+    chk('шкала пароля заполнилась', document.getElementById('pwfill').style.width !== '0%');
+    chk('чеклист пароля отрисован (6 пунктов)',
+        document.getElementById('pwcheck').getElementsByTagName('li').length === 6);
+
+    var sl = document.getElementById('shiftslider');
+    sl.value = 5;
+    sl.oninput();
+    chk('ползунок расшифровал фразу',
+        document.getElementById('plainview').textContent === 'ХОРОШО ТЫ СПРАВИЛСЯ',
+        document.getElementById('plainview').textContent);
+    document.getElementById('m2answer').value = 'хорошо ты справился';
+    document.getElementById('m2check').click();
+    chk('миссия 2 засчитана', S.done.m2 === true);
+
+    /* подсказки, штрафы и анти-ступор */
+    lastAct = new Date().getTime() - 200000;
+    watchStuck();
+    chk('анти-ступор напоминает про подсказку',
+        document.getElementById('toast').innerHTML.indexOf('Застрял') >= 0);
+    var sc = S.score;
+    document.getElementById('m2hint').click();
+    chk('окно подсказки открывается',
+        document.getElementById('m2hintbox').className.indexOf('show') >= 0);
+    chk('подсказка списывает 5 очков', S.score === sc - 5, S.score);
+    document.getElementById('m2hint').click();
+    chk('повторная подсказка не списывает дважды', S.score === sc - 5, S.score);
+
+    var spots = document.getElementById('m3').getElementsByClassName('spot'), i;
+    for(i = 0; i < spots.length; i++){
+      if(spots[i].getAttribute('data-slot') !== 'to') spots[i].onclick();
+    }
+    chk('миссия 3 засчитана (6 ловушек)', S.done.m3 === true);
+    chk('журнал разбора заполнен',
+        document.getElementById('phlog').innerHTML.indexOf('Отправитель') >= 0);
+
+    var q0 = document.getElementById('q4_0').getElementsByTagName('button');
+    var wrong = null, right = null;
+    for(var w = 0; w < q0.length; w++){
+      if(q0[w].getAttribute('data-a') === '0') wrong = q0[w]; else right = q0[w];
+    }
+    var sc2 = S.score;
+    wrong.onclick();
+    chk('неверный ответ штрафует на 2 очка', S.score === sc2 - 2, S.score);
+    chk('карточка помечена как ошибка',
+        document.getElementById('q4_0').className.indexOf('bad') >= 0);
+    right.onclick();
+    chk('после ошибки верный ответ всё равно принимается',
+        document.getElementById('q4_0').className.indexOf('ok') >= 0);
+
+    for(i = 0; i < Q4.length; i++){
+      var btns = document.getElementById('q4_' + i).getElementsByTagName('button');
+      var want = Q4[i].bad ? '1' : '0';
+      for(var b = 0; b < btns.length; b++){
+        if(btns[b].getAttribute('data-a') === want) btns[b].onclick();
+      }
+    }
+    chk('миссия 4 засчитана', S.done.m4 === true);
+
+    function type(cmd){
+      var t = document.getElementById('terminput');
+      t.value = cmd;
+      t.onkeydown({ keyCode: 13 });
+    }
+    type('help'); type('ls'); type('cat notes.txt'); type('страннаякоманда');
+    type('scan 192.168.1.10'); type('crack'); type('flag');
+    chk('миссия 5 засчитана по цепочке команд', S.done.m5 === true);
+    chk('вывод терминала содержит флаг',
+        document.getElementById('termout').innerHTML.indexOf('FRAGMENT-5') >= 0);
+
+    /* --- миссия 6: два фактора --- */
+    var kc = document.getElementById('keygrid').getElementsByClassName('keycard');
+    chk('миссия 6: отрисовано 4 ключа', kc.length === 4, kc.length);
+    kc[0].onclick(); kc[3].onclick();          /* пароль + секретный вопрос — один и тот же тип */
+    document.getElementById('m6check').click();
+    chk('миссия 6: два ключа одного типа не засчитаны', S.done.m6 === false);
+    kc[3].onclick(); kc[1].onclick();          /* снять вопрос, добавить код на телефоне */
+    document.getElementById('m6check').click();
+    chk('миссия 6: два ключа разных типов засчитаны', S.done.m6 === true);
+
+    /* --- миссия 7: минимальные права --- */
+    var m7in = document.getElementById('m7table').getElementsByTagName('input');
+    chk('миссия 7: в таблице 20 чекбоксов (4 сотрудника × 5 ресурсов)', m7in.length === 20, m7in.length);
+    for(i = 0; i < m7in.length; i++){
+      var rr = parseInt(m7in[i].getAttribute('data-role'), 10);
+      var cc = parseInt(m7in[i].getAttribute('data-res'), 10);
+      m7in[i].checked = P7_ROLES[rr].need.indexOf(cc) >= 0;
+    }
+    m7in[0].checked = false;                   /* у Ирины отняли нужное право */
+    document.getElementById('m7check').click();
+    chk('миссия 7: нехватка права не принимается', S.done.m7 === false);
+    m7in[0].checked = true;
+    document.getElementById('m7check').click();
+    chk('миссия 7: эталонная матрица принята', S.done.m7 === true);
+
+    /* --- миссия 8: журнал сервера --- */
+    var rows = document.getElementById('logwrap').getElementsByClassName('logrow');
+    chk('миссия 8: в журнале 12 строк', rows.length === 12, rows.length);
+    for(i = 0; i < rows.length; i++) rows[i].onclick();
+    document.getElementById('m8check').click();
+    chk('миссия 8: «отметить все строки» не принимается', S.done.m8 === false);
+    for(i = 0; i < rows.length; i++) if(!L8[i].attack) rows[i].onclick();
+    document.getElementById('m8check').click();
+    chk('миссия 8: найдена атака и миссия засчитана', S.done.m8 === true);
+    chk('миссия 8: выведен разбор инцидента',
+        document.getElementById('m8result').innerHTML.indexOf('брутфорс') >= 0);
+
+    /* --- миссия 9: поддельные адреса --- */
+    var ub = document.getElementById('urlwrap').getElementsByClassName('urlbtn');
+    chk('миссия 9: отрисовано 12 адресов (6 пар)', ub.length === 12, ub.length);
+    var sc9 = S.score;
+    ub[0].onclick();                            /* первый адрес в паре 1 — настоящий */
+    chk('миссия 9: клик по настоящему адресу штрафует на 2 очка', S.score === sc9 - 2, S.score);
+    for(var pp = 0; pp < U9.length; pp++) ub[pp * 2 + U9[pp].fake].onclick();
+    chk('миссия 9: все 6 поддельных адресов найдены', S.done.m9 === true);
+
+    /* --- миссия 10: шифр замены --- */
+    chk('миссия 10: шифртекст показан',
+        document.getElementById('m10cipher').textContent.length > 5,
+        document.getElementById('m10cipher').textContent);
+    chk('миссия 10: таблица замены отрисована (66 клеток)',
+        document.getElementById('subwrap').getElementsByTagName('td').length === 66,
+        document.getElementById('subwrap').getElementsByTagName('td').length);
+    document.getElementById('m10answer').value = 'НЕПРАВИЛЬНО';
+    document.getElementById('m10check').click();
+    chk('миссия 10: неверный ответ не засчитан', S.done.m10 === false);
+    document.getElementById('m10answer').value = 'доступ разрешен';
+    document.getElementById('m10check').click();
+    chk('миссия 10: верный ответ засчитан', S.done.m10 === true);
+
+    chk('финальный блок открылся', document.getElementById('finalbox').style.display === 'block');
+    chk('фраза-итог собрана',
+        document.getElementById('codephraseOut').innerHTML.indexOf('ПРОДУКТ') >= 0);
+
+    document.getElementById('stname').value = 'Тестов Тест';
+    document.getElementById('certbtn').click();
+    chk('сертификат показан', document.getElementById('cert').style.display === 'block');
+    chk('сертификат на нужное ФИО', document.getElementById('certname').textContent === 'Тестов Тест');
+    chk('очки = 189 (200 − 5 за подсказку − 6 за три ошибки)', S.score === 189, S.score);
+    chk('прогресс-бар на 100%', document.getElementById('progbar').style.width === '100%',
+        document.getElementById('progbar').style.width);
+    chk('в шапке максимум 200 очков', document.getElementById('scoretotal').textContent === '200',
+        document.getElementById('scoretotal').textContent);
+    chk('в навигации 10 карточек',
+        document.getElementById('mnav').getElementsByClassName('mcard').length === 10,
+        document.getElementById('mnav').getElementsByClassName('mcard').length);
+    chk('все 10 карточек помечены пройденными',
+        document.getElementById('mnav').innerHTML.split('finished').length - 1 === 10);
+    chk('все окна успеха показаны',
+        ['m1ok','m2ok','m3ok','m4ok','m5ok','m6ok','m7ok','m8ok','m9ok','m10ok'].every(function(id){
+          return document.getElementById(id).style.display === 'block'; }));
+    chk('в сертификате проставлены очки', document.getElementById('certscore').textContent === '189',
+        document.getElementById('certscore').textContent);
+  } catch(e){
+    log.push('FAIL :: исключение: ' + e.message);
+  }
+  var d = document.createElement('pre');
+  d.id = 'TESTLOG';
+  d.textContent = '<<<' + log.join(' ||| ') + '>>>';
+  document.body.appendChild(d);
+});
+</script>
+</body>

@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Операция «КИБЕРБАРЬЕР» — мастер-класс по ИБ</title>
+<style>
+:root{
+  --bg:#070b08; --panel:#0d1410; --panel2:#101b14; --line:#1d3a2a;
+  --green:#00ff9c; --dim:#8affc9; --text:#d2ffe9; --mut:#6fa88b;
+  --red:#ff5c5c; --amber:#ffd166; --gold:#e8c96a;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Consolas","Courier New",monospace; font-size:16px; line-height:1.5;
+  background-image:radial-gradient(ellipse at 50% -10%, #0e2216 0%, var(--bg) 60%);
+}
+a{color:var(--green)}
+header{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+  padding:10px 18px; background:rgba(7,11,8,.94); border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
+}
+.logo{font-weight:bold; color:var(--green); letter-spacing:1px; white-space:nowrap}
+.logo small{color:var(--mut); display:block; font-size:11px; letter-spacing:0}
+.hud{margin-left:auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.hud .box{border:1px solid var(--line); border-radius:8px; padding:4px 12px; background:var(--panel); font-size:14px; white-space:nowrap}
+#timer.warn{color:var(--red); border-color:var(--red); animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.55}}
+#progwrap{width:120px; height:10px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#081209}
+#progbar{height:100%; width:0%; background:linear-gradient(90deg,#0a5,#0fd88a); transition:width .5s}
+.wrap{max-width:1000px; margin:0 auto; padding:20px 16px 80px}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:20px 22px; margin:18px 0; box-shadow:0 4px 18px rgba(0,0,0,.4);
+}
+.card.done{border-color:var(--green); box-shadow:0 0 14px rgba(0,255,156,.25)}
+h1{color:var(--green); font-size:26px; margin:6px 0 10px}
+h2{color:var(--green); margin:0 0 6px; font-size:21px}
+h3{color:var(--dim); margin:14px 0 6px}
+.tag{
+  display:inline-block; border:1px solid var(--green); color:var(--green);
+  border-radius:6px; padding:2px 10px; font-size:12px; letter-spacing:1px; margin-bottom:8px;
+}
+.status{float:right; font-size:13px; color:var(--mut)}
+.status.ok{color:var(--green)}
+p{margin:8px 0}
+.mut{color:var(--mut); font-size:14px}
+.btn{
+  background:transparent; color:var(--green); border:1px solid var(--green);
+  border-radius:8px; padding:9px 18px; font-family:inherit; font-size:15px;
+  cursor:pointer; transition:.15s; margin:4px 6px 4px 0;
+}
+.btn:hover{background:rgba(0,255,156,.12); box-shadow:0 0 10px rgba(0,255,156,.35)}
+.btn:disabled{opacity:.35; cursor:not-allowed; box-shadow:none}
+.btn.primary{background:var(--green); color:#04160c; font-weight:bold}
+.btn.primary:hover{box-shadow:0 0 16px rgba(0,255,156,.6)}
+.btn.small{padding:5px 12px; font-size:13px}
+input[type=text],input[type=password]{
+  background:#081209; border:1px solid var(--line); color:var(--text);
+  border-radius:8px; padding:10px 12px; font-family:inherit; font-size:16px; width:100%;
+}
+input:focus{outline:none; border-color:var(--green); box-shadow:0 0 8px rgba(0,255,156,.3)}
+.hintbox{border:1px dashed var(--amber); color:var(--amber); border-radius:8px; padding:10px 14px; margin:10px 0; display:none}
+.hintbox.show{display:block}
+.okmsg{color:var(--green); font-weight:bold}
+.errmsg{color:var(--red)}
+.fragchip{
+  display:inline-block; background:#0a2b1c; border:1px solid var(--green); color:var(--green);
+  border-radius:20px; padding:4px 14px; margin:3px; font-weight:bold; letter-spacing:1px;
+}
+.fragchip.empty{opacity:.25; border-style:dashed}
+ul.check{list-style:none; padding:0; margin:10px 0}
+ul.check li{padding:6px 10px; border-bottom:1px dashed #14301f; color:var(--mut)}
+ul.check li.ok{color:var(--green)}
+ul.check li::before{content:"[ ] "}
+ul.check li.ok::before{content:"[✔] "}
+ul.reqlist{list-style:none; padding:0; margin:10px 0}
+ul.reqlist li{padding:5px 0 5px 22px; position:relative; color:var(--dim); border-bottom:1px dashed #14301f}
+ul.reqlist li::before{content:"▸"; position:absolute; left:4px; color:var(--green)}
+#pwbar{height:12px; background:#081209; border:1px solid var(--line); border-radius:6px; overflow:hidden; margin:8px 0}
+#pwfill{height:100%; width:0%; transition:.3s; background:var(--red)}
+.bigtime{font-size:34px; color:var(--green); font-weight:bold}
+.shiftbig{font-size:30px; color:var(--amber); font-weight:bold; min-width:70px; display:inline-block; text-align:center}
+.ciphertext{
+  background:#081209; border:1px solid var(--line); border-radius:8px;
+  padding:16px; font-size:22px; letter-spacing:4px; text-align:center; color:var(--amber);
+  word-break:break-all; margin:10px 0;
+}
+.emailbox{background:#f4f4f4; color:#222; border-radius:10px; font-family:"Segoe UI",Arial,sans-serif; overflow:hidden}
+.emailhead{background:#e3e3e3; padding:10px 14px; border-bottom:1px solid #ccc; font-size:14px}
+.emailhead div{margin:2px 0}
+.emailbody{padding:16px 18px; font-size:15px}
+.emailbody .fakebtn{
+  display:inline-block; background:#1a73e8; color:#fff; padding:10px 22px; border-radius:6px;
+  text-decoration:none; font-weight:bold; margin:8px 0;
+}
+.spot{cursor:pointer; border-bottom:2px dotted #c00; padding:0 2px}
+.spot:hover{background:#fff3b0}
+.spot.found{background:#ffe680; border-bottom:2px solid #0a0; border-radius:4px}
+.spot.found::after{content:" ✔"; color:#070}
+.attfile{
+  display:inline-block; border:1px solid #bbb; background:#fff; border-radius:6px;
+  padding:8px 12px; font-size:14px; margin-top:6px; cursor:pointer;
+}
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:99;
+  background:#132a1c; border:1px solid var(--green); color:var(--text);
+  border-radius:10px; padding:12px 20px; max-width:640px; display:none;
+  box-shadow:0 6px 24px rgba(0,0,0,.6); font-size:14px;
+}
+.toast.bad{border-color:var(--red)}
+.qcard{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:10px 0; background:var(--panel2)}
+.qcard.ok{border-color:var(--green)}
+.qcard.bad{border-color:var(--red)}
+.qbtns{margin-top:8px}
+.term{
+  background:#020604; border:1px solid var(--green); border-radius:10px;
+  padding:14px; min-height:230px; max-height:320px; overflow-y:auto;
+  font-size:15px; color:#9dffcb;
+}
+.term .cmd{color:var(--green); font-weight:bold}
+.term .sys{color:var(--amber)}
+.term .err{color:var(--red)}
+.terminrow{display:flex; gap:8px; margin-top:10px}
+.terminrow input{flex:1}
+.prompt{color:var(--green); font-weight:bold; padding:10px 0}
+.missiongrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px}
+.mcard{
+  border:1px solid var(--line); background:var(--panel2); border-radius:10px; padding:12px;
+  text-align:center; cursor:pointer; transition:.15s;
+}
+.mcard:hover{border-color:var(--green); transform:translateY(-2px)}
+.mcard .num{font-size:22px; color:var(--green)}
+.mcard .st{font-size:12px; color:var(--mut)}
+.mcard.finished .st{color:var(--green)}
+.cert{
+  display:none; background:#fffef5; color:#2b2410; border:6px double var(--gold);
+  border-radius:10px; padding:30px; text-align:center; font-family:Georgia,"Times New Roman",serif;
+  margin-top:16px;
+}
+.cert h2{color:#7a621f}
+.cert input{font-family:Georgia,serif; color:#2b2410; border:none; border-bottom:2px solid #7a621f; border-radius:0; background:transparent; text-align:center; font-size:24px; width:340px}
+.cert .name{font-size:28px; border-bottom:2px solid #7a621f; display:inline-block; min-width:300px; padding:0 10px}
+.codephrase{font-size:24px; letter-spacing:3px; color:var(--green); text-align:center; margin:14px 0; word-break:break-all}
+.center{text-align:center}
+.mcard .diff{font-size:12px; color:var(--amber); letter-spacing:2px; margin-top:2px}
+/* --- новые миссии 6-10 --- */
+.keygrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; margin:12px 0}
+.keycard{border:1px solid var(--line); background:var(--panel2); border-radius:10px; padding:12px 14px; cursor:pointer; transition:.15s}
+.keycard:hover{border-color:var(--green)}
+.keycard .typ{font-size:12px; color:var(--mut); margin-top:6px}
+.keycard.sel{border-color:var(--green); background:#0b2418; box-shadow:0 0 12px rgba(0,255,156,.3)}
+.keycard.sel .typ{color:var(--green)}
+table.matrix{width:100%; border-collapse:collapse; margin:12px 0; font-size:14px}
+table.matrix th,table.matrix td{border:1px solid var(--line); padding:7px 8px; text-align:center}
+table.matrix th{background:#0b2418; color:var(--green); font-weight:normal; font-size:13px}
+table.matrix td.role{text-align:left; color:var(--dim)}
+table.matrix input{width:18px; height:18px; cursor:pointer; accent-color:#00ff9c}
+.logrow{border:1px solid var(--line); border-radius:6px; padding:5px 10px; margin:4px 0;
+        cursor:pointer; font-size:14px; background:#081209; transition:.12s}
+.logrow:hover{border-color:var(--green)}
+.logrow.sel{border-color:var(--red); background:#2a1414}
+.logrow .t{color:var(--mut)}
+.logrow .fail{color:var(--red)}
+.urlpair{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:10px 0; background:var(--panel2)}
+.urlpair.done{border-color:var(--green)}
+.urlbtn{display:inline-block; border:1px solid var(--line); border-radius:8px; padding:8px 14px;
+        margin:4px 8px 4px 0; cursor:pointer; font-size:15px; background:#081209; word-break:break-all}
+.urlbtn:hover{border-color:var(--green)}
+.urlbtn.good{border-color:var(--green); color:var(--green); cursor:default}
+.urlbtn.badpick{border-color:var(--red); color:var(--red)}
+.subtable{border-collapse:collapse; margin:12px 0; font-size:14px}
+.subtable td{border:1px solid var(--line); padding:3px 7px; text-align:center; color:var(--dim)}
+.subtable td.up{color:var(--amber); font-weight:bold}
+/* --- экспертные миссии 11-20 --- */
+.filebox{border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:6px 0;
+         background:#081209; font-size:13px; white-space:pre-wrap; color:var(--dim)}
+.hashval{color:var(--amber); font-weight:bold; letter-spacing:1px}
+.hashval.mismatch{color:var(--red)}
+.rowitem{border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0;
+         background:var(--panel2); display:flex; gap:12px; align-items:flex-start; justify-content:space-between}
+.rowitem .txt{font-size:14px; color:var(--dim)}
+.rowitem.sel{border-color:var(--amber)}
+.rowitem.fixed{border-color:var(--green); opacity:.8}
+.rowitem code{color:var(--amber)}
+.rowitem select{margin-top:4px}
+.orderbtn{border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0;
+          cursor:pointer; background:var(--panel2); font-size:14px; color:var(--dim);
+          display:flex; gap:10px; align-items:center; text-align:left; width:100%}
+.orderbtn:hover{border-color:var(--green)}
+.orderbtn.picked{border-color:var(--green); color:var(--green)}
+.orderbtn .badge{border:1px solid var(--green); border-radius:6px; padding:0 7px; color:var(--green);
+                 min-width:22px; text-align:center; font-weight:bold}
+select.tool{background:#081209; color:var(--green); border:1px solid var(--line);
+            border-radius:6px; padding:6px 8px; font-family:inherit; font-size:13px; margin-top:6px}
+.stego{font-family:Consolas,monospace; font-size:13px; line-height:1.8; background:#081209;
+       border:1px solid var(--line); border-radius:8px; padding:12px; color:var(--dim); word-break:break-word}
+.qblock{border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:10px 0; background:var(--panel2)}
+.qblock .qt{font-size:14px; color:var(--dim); margin-bottom:6px}
+.qblock label{display:block; padding:4px 0; font-size:14px; color:var(--dim); cursor:pointer}
+.qblock label:hover{color:var(--green)}
+.qblock.wrongpick{border-color:var(--red)}
+.wifinet{border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin:6px 0;
+         background:var(--panel2); cursor:pointer; font-size:14px; color:var(--dim)}
+.wifinet:hover{border-color:var(--green)}
+.wifinet.pick{border-color:var(--red); background:#2a1414}
+.wifinet.good{border-color:var(--green); color:var(--green)}
+.mini{font-size:12px; color:var(--mut)}
+footer{text-align:center; color:var(--mut); font-size:12px; padding:30px 0 10px}
+@media print{
+  body{background:#fff}
+  header,.card,footer,.toast,.noprint{display:none !important}
+  .cert{display:block !important; border-color:#7a621f}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⟁ ОПЕРАЦИЯ «КИБЕРБАРЬЕР»<small>мастер-класс по информационной безопасности</small></div>
+  <div class="hud">
+    <div class="box" id="timer">⏱ 60:00</div>
+    <div class="box">Очки: <b id="score">0</b>/<span id="scoretotal">400</span></div>
+    <div class="box" id="progwrap"><div id="progbar"></div></div>
+    <button class="btn small noprint" id="resetbtn" title="Начать заново">↺ Сброс</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section class="card" id="intro">
+  <h1>&gt; ВХОДЯЩИЙ СИГНАЛ... ДОСТУП РАЗРЕШЁН_</h1>
+  <p>Студент, поздравляем: ты зачислен <b>стажёром отдела информационной безопасности</b>.</p>
+  <p>За последний час хакеры пытались атаковать нашу сеть. Твоя задача — пройти тренировочные
+     миссии и собрать код доступа. Каждая миссия даёт <b>фрагмент кода</b>: соберёшь 10 —
+     получишь <b>базовый сертификат</b>, соберёшь все 20 — получишь уровень <b>«ЭКСПЕРТ»</b>.</p>
+  <p class="mut">Блок 1 (миссии 1–10): разминка → сложные. Блок 2 (миссии 11–20):
+     <b>экспертный</b> — хеши, заголовки писем, аудит сервера, цепочка атаки, криптография,
+     стеганография, SQL-инъекции, оценка риска, Wi-Fi и экзамен. Сложность отмечена <b>★</b>,
+     порядок прохождения любой.</p>
+  <div id="fragbar" style="margin:10px 0"></div>
+  <p class="mut">Застрял — жми жёлтую кнопку «💡 Подсказка» (стоит −5 очков, но об этом узнаем только мы).</p>
+  <nav class="missiongrid" id="mnav"></nav>
+  <div class="center" style="margin-top:16px">
+    <button class="btn primary" id="startbtn">▶ НАЧАТЬ ОПЕРАЦИЮ</button>
+  </div>
+</section>
+
+<section class="card" id="m1">
+  <span class="status" id="st1">не пройдена</span>
+  <span class="tag">МИССИЯ 1 · 20 ОЧКОВ</span>
+  <h2>🔑 Оружейная: собери надёжный пароль</h2>
+  <p>Хакеры не угадывают пароль руками — программа перебирает миллиарды вариантов в секунду.
+     Слабый пароль она вскроет быстрее, чем ты прочтёшь это предложение.</p>
+  <p>Придумай пароль, который ей не по зубам: <b>от 12 символов</b>, маленькие и БОЛЬШИЕ буквы,
+     цифры и хотя бы один знак (<code>!</code> <code>#</code> <code>%</code> <code>$</code>).</p>
+  <input type="text" id="pwin" placeholder="печатай пароль здесь..." autocomplete="off" spellcheck="false">
+  <div id="pwbar"><div id="pwfill"></div></div>
+  <p>Хакер взломает за: <span class="bigtime" id="pwtime">мгновенно</span></p>
+  <p>Оценка пароля: <span id="pwverdict" class="mut">—</span></p>
+  <ul class="check" id="pwcheck"></ul>
+  <button class="btn small" id="pwhint">💡 Подсказка (−5)</button>
+  <div class="hintbox" id="pwhintbox">Секрет надёжности — <b>длина</b>. Возьми 3 случайных слова,
+    соедини их и добавь цифры и символ. Пример схемы: <code>Слово-Слово-77!</code>.
+    Такой пароль человек запомнит, а программа будет подбирать сотни лет.</div>
+  <div class="okmsg" id="m1ok" style="display:none">✅ МИССИЯ 1 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">БЕЗОПАСНОСТЬ</span></div>
+</section>
+
+<section class="card" id="m2">
+  <span class="status" id="st2">не пройдена</span>
+  <span class="tag">МИССИЯ 2 · 20 ОЧКОВ</span>
+  <h2>🔐 Перехват: взломай шифр Цезаря</h2>
+  <p>Мы перехватили сообщение противника. Оно зашифровано <b>сдвигом букв по алфавиту</b>
+     (шифр Цезаря): каждая буква заменена на соседнюю. Например при сдвиге 1 слово
+     <code>КОТ</code> превращается в <code>ЛПУ</code>.</p>
+  <div class="ciphertext">ЪУХУЭУ ЧА ЦФХЕЖНРЦД</div>
+  <p>Двигай ползунок — текст будет расшифровываться на глазах. Остановись, когда прочитаешь фразу.</p>
+  <div class="center" style="margin:10px 0">
+    Ключ (сдвиг): <span class="shiftbig" id="shiftval">0</span><br>
+    <input type="range" id="shiftslider" min="0" max="32" value="0" style="width:80%; margin-top:8px">
+  </div>
+  <div class="ciphertext" id="plainview">ЪУХУЭУ ЧА ЦФХЕЖНРЦД</div>
+  <p>Нашёл верный ключ? Впиши прочитанную фразу в поле:</p>
+  <input type="text" id="m2answer" placeholder="расшифрованная фраза..." autocomplete="off" spellcheck="false">
+  <div style="margin-top:10px">
+    <button class="btn primary" id="m2check">✔ Проверить</button>
+    <button class="btn small" id="m2hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="errmsg" id="m2err" style="display:none"></div>
+  <div class="hintbox" id="m2hintbox">Ключ точно больше 0 и меньше 10. Смотри на первое слово:
+    оно должно превратиться в слово из 6 букв, которое начинается на <b>Х</b> и означает «молодец».</div>
+  <div class="okmsg" id="m2ok" style="display:none">✅ МИССИЯ 2 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ЭТО</span></div>
+</section>
+
+<section class="card" id="m3">
+  <span class="status" id="st3">найдено 0/6</span>
+  <span class="tag">МИССИЯ 3 · 20 ОЧКОВ</span>
+  <h2>📧 Фишинг: найди все обманы в письме</h2>
+  <p>Это письмо пришло на рабочую почту. <b>Кликай по подозрительным местам</b> — мы объясним,
+     что не так. Всего в письме спрятано <b>6 ловушек</b>. Помни: не всё подозрительно —
+     некоторые места абсолютно нормальные.</p>
+
+  <div class="emailbox">
+    <div class="emailhead">
+      <div>От: <span class="spot" data-slot="sender">«Служба безопасности Банк-Онлайн» &lt;security@bank-online-bezopasnost.cc&gt;</span></div>
+      <div>Кому: <span class="spot" data-slot="to">tebe@college.ru</span></div>
+      <div>Тема: <span class="spot" data-slot="subject">СРОЧНО! Ваша карта будет заблокирована через 24 часа</span></div>
+    </div>
+    <div class="emailbody">
+      <p><span class="spot" data-slot="hello">Здравствуйте, уважаемый клиент!</span></p>
+      <p>Мы заметили <b>подозрительную операцию</b> по вашей карте и временно приостановили её работу.
+        Чтобы не потерять деньги, подтвердите личность по ссылке ниже.</p>
+      <p><span class="fakebtn spot" data-slot="link">ПОДТВЕРДИТЬ ЛИЧНОСТЬ</span></p>
+      <p style="color:#555">Если операция вам знакома — просто игнорируйте письмо.</p>
+      <p><span class="attfile spot" data-slot="file">📎 Квитанция_оплаты.exe · 248 КБ · Скачать</span></p>
+      <p>После подтверждения <span class="spot" data-slot="sms">сообщите нашему специалисту код из SMS</span>,
+        который придёт вам в течение минуты, — так мы быстрее разблокируем доступ.</p>
+      <p>С уважением, отдел безопасности банка.</p>
+    </div>
+  </div>
+
+  <h3>Журнал разбора</h3>
+  <div id="phlog" class="mut">Пока ничего не найдено. Начинай кликать по письму выше.</div>
+  <button class="btn small" id="m3hint">💡 Подсказка (−5)</button>
+  <div class="hintbox" id="m3hintbox">Смотри на три вещи: <b>адрес отправителя</b> (совпадает ли он с доменом банка?),
+    <b>тип вложения</b> (документ или программа?) и <b>что просят сделать</b>.
+    Если просят сообщить код из SMS — это уже обман, без вариантов.</div>
+  <div class="okmsg" id="m3ok" style="display:none">✅ МИССИЯ 3 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ПРОЦЕСС,</span></div>
+</section>
+
+<section class="card" id="m4">
+  <span class="status" id="st4">0 из 6 решено</span>
+  <span class="tag">МИССИЯ 4 · 20 ОЧКОВ</span>
+  <h2>🎭 Социальная инженерия: опасная ситуация?</h2>
+  <p>Хакеры часто не ломают технику — они обманывают человека. Это называется
+     <b>социальная инженерия</b>. Прочитай ситуацию и нажми: <b>ОПАСНО</b> или <b>БЕЗОПАСНО</b>.
+     Ошибиться не страшно — карточка даст объяснение и разрешит попробовать снова.</p>
+  <div id="qwrap"></div>
+  <button class="btn small" id="m4hint">💡 Подсказка (−5)</button>
+  <div class="hintbox" id="m4hintbox">Золотое правило: <b>настоящая служба безопасности никогда не спрашивает
+    пароль, код из SMS или доступ к твоим устройствам</b>. Если просят — обман, кем бы человек ни представился.
+    И ещё: получил странную ссылку от друга — сначала позвони другу.</div>
+  <div class="okmsg" id="m4ok" style="display:none">✅ МИССИЯ 4 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">А НЕ</span></div>
+</section>
+
+<section class="card" id="m5">
+  <span class="status" id="st5">не пройдена</span>
+  <span class="tag">МИССИЯ 5 · 20 ОЧКОВ</span>
+  <h2>💻 Терминал: разведка учебной сети</h2>
+  <p>Специалисты ИБ большую часть времени работают в консоли. Перед тобой <b>учебный тренажёр</b>:
+     он полностью безопасен, всё «взломанное» — выдумано. Введи команду <code>help</code>
+     и посмотри, что доступно.</p>
+  <div class="term" id="termout"></div>
+  <div class="terminrow">
+    <span class="prompt">student@kiberbarier:~$</span>
+    <input type="text" id="terminput" placeholder="введи команду и нажми Enter" autocomplete="off" spellcheck="false">
+    <button class="btn" id="termbtn">▶</button>
+  </div>
+  <button class="btn small" id="m5hint">💡 Подсказка (−5)</button>
+  <div class="hintbox" id="m5hintbox">Порядок такой: <code>help</code> → <code>scan 192.168.1.10</code>
+    → <code>crack</code> → <code>flag</code>. По пути можно посмотреть файлы: <code>ls</code>,
+    затем <code>cat notes.txt</code>.</div>
+  <div class="okmsg" id="m5ok" style="display:none">✅ МИССИЯ 5 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ПРОДУКТ</span></div>
+</section>
+
+<section class="card" id="m6">
+  <span class="status" id="st6">не пройдена</span>
+  <span class="tag">МИССИЯ 6 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★</span>
+  <h2>🔐 Два замка: двухфакторная аутентификация</h2>
+  <p>Пароль можно украсть, подсмотреть или подобрать. Второй фактор — это подтверждение
+     <b>другого типа</b>. Выбери <b>ровно два ключа разных типов</b> и проверь, устоит ли
+     твой вход, если хакер уже знает пароль.</p>
+  <div class="keygrid" id="keygrid"></div>
+  <div>
+    <button class="btn primary" id="m6check">✔ ПРОВЕРИТЬ ВХОД</button>
+    <button class="btn small" id="m6hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m6hintbox">Типов факторов всего три: <b>то, что ты знаешь</b> (пароль, ответ
+    на секретный вопрос), <b>то, что у тебя есть</b> (телефон, токен)
+    и <b>то, что ты есть</b> (отпечаток пальца, лицо). Пароль плюс секретный вопрос — это
+    два ключа <i>одного</i> типа, то есть всё ещё один замок.</div>
+  <div id="m6result" style="margin-top:10px"></div>
+  <div class="okmsg" id="m6ok" style="display:none">✅ МИССИЯ 6 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">И ЕГО</span></div>
+</section>
+
+<section class="card" id="m7">
+  <span class="status" id="st7">не пройдена</span>
+  <span class="tag">МИССИЯ 7 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★</span>
+  <h2>🧩 Минимальные права: настрой доступы</h2>
+  <p>Принцип наименьших привилегий: у сотрудника должен быть доступ <b>только к тому, что нужно
+     для работы</b>. Лишние права — лишний риск: если аккаунт взломают, злоумышленник получит больше.</p>
+  <p class="mut">Что реально нужно каждому сотруднику:</p>
+  <ul class="reqlist">
+    <li><b>Ирина (бухгалтер)</b> — только «Файлы бухгалтерии»</li>
+    <li><b>Олег (программист)</b> — только «Сервер разработки»</li>
+    <li><b>Сергей (администратор)</b> — «Сервер разработки», «Журналы доступа», «Настройки системы»</li>
+    <li><b>Аня (стажёр, первая неделя)</b> — только «Учебный стенд»</li>
+  </ul>
+  <div id="m7table"></div>
+  <div>
+    <button class="btn primary" id="m7check">✔ ПРОВЕРИТЬ ДОСТУПЫ</button>
+    <button class="btn small" id="m7hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m7hintbox">Всего должно остаться <b>6 галочек</b>: 1 у Ирины, 1 у Олега,
+    3 у Сергея и 1 у Ани. Всё сверх этого — лишние права; там, где галочки не хватает,
+    сотрудник просто не сможет работать.</div>
+  <div class="errmsg" id="m7err" style="display:none"></div>
+  <div class="okmsg" id="m7ok" style="display:none">✅ МИССИЯ 7 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ДЕЛАЮТ</span></div>
+</section>
+
+<section class="card" id="m8">
+  <span class="status" id="st8">не пройдена</span>
+  <span class="tag">МИССИЯ 8 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★</span>
+  <h2>📋 Журнал сервера: найди атаку</h2>
+  <p>Перед тобой журнал входов за утро. <b>Кликай по строкам, которые считаешь атакой</b>,
+     затем нажми «Проверить». Внимание: не каждая неудачная попытка — атака.</p>
+  <div id="logwrap"></div>
+  <div>
+    <button class="btn primary" id="m8check">✔ ПРОВЕРИТЬ ВЫВОД</button>
+    <button class="btn small" id="m8hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m8hintbox">Обычная опечатка — это <b>одна</b> неудачная попытка со своего адреса.
+    Атака — это <b>много</b> неудачных попыток за секунды, с <b>внешнего чужого</b> адреса,
+    да ещё с подбором имён вроде <code>admin</code> и <code>root</code>.</div>
+  <div class="errmsg" id="m8err" style="display:none"></div>
+  <div id="m8result" class="okmsg" style="display:none"></div>
+  <div class="okmsg" id="m8ok" style="display:none">✅ МИССИЯ 8 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ЛЮДИ</span></div>
+</section>
+
+<section class="card" id="m9">
+  <span class="status" id="st9">0 из 6 пар</span>
+  <span class="tag">МИССИЯ 9 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★</span>
+  <h2>🕵 Поддельные адреса: где обман?</h2>
+  <p>В каждой паре <b>один адрес настоящий, а второй — поддельный</b>. Кликай по поддельным.
+     Читай адрес <b>справа налево</b>: сначала домен, а потом всё остальное.</p>
+  <div id="urlwrap"></div>
+  <button class="btn small" id="m9hint">💡 Подсказка (−5)</button>
+  <div class="hintbox" id="m9hintbox">Смотри на три вещи: <b>дефис вместо точки</b>, <b>лишнее слово
+    в имени</b> и <b>чужую зону</b> после первой точки (например <code>.site</code>, <code>.xyz</code>).
+    И ещё: буквы «а», «е», «о», «с» бывают кириллическими — выглядят так же, а домен другой.</div>
+  <div class="okmsg" id="m9ok" style="display:none">✅ МИССИЯ 9 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">КАЖДЫЙ</span></div>
+</section>
+
+<section class="card" id="m10">
+  <span class="status" id="st10">не пройдена</span>
+  <span class="tag">МИССИЯ 10 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★</span>
+  <h2>🧠 Шифр замены: расшифруй без ползунка</h2>
+  <p>Здесь уже не сдвиг: каждая буква заменена <b>своей собственной</b> буквой по таблице.
+     Ползунка нет — работай с ключом, как настоящий криптоаналитик.</p>
+  <p class="mut">Ключ (таблица замены): верхняя строка — буква в шифре, нижняя — что она означает.</p>
+  <div id="subwrap"></div>
+  <div class="ciphertext" id="m10cipher">…</div>
+  <input type="text" id="m10answer" placeholder="расшифрованная фраза..." autocomplete="off" spellcheck="false">
+  <div style="margin-top:10px">
+    <button class="btn primary" id="m10check">✔ Проверить</button>
+    <button class="btn small" id="m10hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="errmsg" id="m10err" style="display:none"></div>
+  <div class="hintbox" id="m10hintbox">Работай по одной букве: нашёл букву в верхней строке таблицы —
+    смотри букву под ней. Фраза состоит из двух слов: первое — право войти в систему,
+    второе — что это право получено.</div>
+  <div class="okmsg" id="m10ok" style="display:none">✅ МИССИЯ 10 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ДЕНЬ</span></div>
+</section>
+
+<section class="card" id="m11">
+  <span class="status" id="st11">не пройдена</span>
+  <span class="tag">МИССИЯ 11 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★</span>
+  <h2>#️⃣ Хеш-сумма: кто подменил договор</h2>
+  <p>Хеш — это короткий «отпечаток» файла. Изменилась хотя бы одна буква — отпечаток
+     меняется целиком. В журнале аудита сохранён эталонный хеш договора №14. Посчитай хеш каждой
+     копии, сравни с эталоном и найди подменённый файл.</p>
+  <p class="mut">Эталонный хеш договора №14 из журнала аудита:
+     <span class="hashval" id="h11ref">…</span></p>
+  <div id="h11wrap"></div>
+  <div>
+    <button class="btn small" id="m11hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m11hintbox">Хеш сравнивают посимвольно: отличается хоть один символ —
+     отличается файл. Не угадывай: нажми «Посчитать хеш» у каждой копии и сравни результат
+     с эталоном выше.</div>
+  <div class="errmsg" id="m11err" style="display:none"></div>
+  <div class="okmsg" id="m11ok" style="display:none">✅ МИССИЯ 11 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">КОНТРОЛЬ ЦЕЛОСТНОСТИ</span></div>
+</section>
+
+<section class="card" id="m12">
+  <span class="status" id="st12">0 из 3 признаков</span>
+  <span class="tag">МИССИЯ 12 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★</span>
+  <h2>📨 Заголовки письма: где след подделки</h2>
+  <p>Адрес отправителя подделать легко, а технические заголовки — почти нет. Прочитай служебные
+     строки письма «от банка» и отметь <b>ровно 3 строки</b>, которые технически доказывают подделку.</p>
+  <div id="h12wrap"></div>
+  <div>
+    <button class="btn primary" id="m12check">✔ ПРОВЕРИТЬ</button>
+    <button class="btn small" id="m12hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m12hintbox">Смотри на <b>домены</b>: письмо якобы от <code>bank-online.ru</code>,
+     но домен на самом деле виден в служебных строках — в возвратном адресе, в ответе (Reply-To)
+     и в результатах проверки подлинности. Строка «От кого» — ловушка для доверчивых.</div>
+  <div class="errmsg" id="m12err" style="display:none"></div>
+  <div class="okmsg" id="m12ok" style="display:none">✅ МИССИЯ 12 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ПРОВЕРКА ЗАГОЛОВКОВ</span></div>
+</section>
+
+<section class="card" id="m13">
+  <span class="status" id="st13">исправлено 0 из 6</span>
+  <span class="tag">МИССИЯ 13 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★</span>
+  <h2>🛠 Аудит сервера: найди и почини</h2>
+  <p>Перед тобой отчёт о настройках сервера колледжа. Шесть настроек повышают риск взлома.
+     Нажми <b>«Исправить»</b> только там, где настройка действительно опасна.
+     Исправление безопасной настройки стоит 2 очка — думай, прежде чем нажимать.</p>
+  <div id="a13wrap"></div>
+  <div>
+    <button class="btn small" id="m13hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m13hintbox">Опасно то, что даёт лишний доступ, отключает защиту или мешает
+     заметить атаку: прямой вход root, пароль из словаря, выключенные обновления, выключенный
+     firewall, выключенные логи и копия на том же диске.</div>
+  <div class="errmsg" id="m13err" style="display:none"></div>
+  <div class="okmsg" id="m13ok" style="display:none">✅ МИССИЯ 13 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">АУДИТ НАСТРОЕК</span></div>
+</section>
+
+<section class="card" id="m14">
+  <span class="status" id="st14">не пройдена</span>
+  <span class="tag">МИССИЯ 14 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>⛓ Цепочка атаки: восстанови хронологию</h2>
+  <p>Служба ИБ собрала события инцидента, но они перемешаны. Кликай по событиям
+     <b>в том порядке, в котором они происходили</b>: первое событие получает номер 1,
+     последнее — 6. Повторный клик снимает отметку.</p>
+  <div id="h14wrap"></div>
+  <div>
+    <button class="btn primary" id="m14check">✔ ПРОВЕРИТЬ ПОРЯДОК</button>
+    <button class="btn small" id="m14reset">↺ Сбросить</button>
+    <button class="btn small" id="m14hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m14hintbox">Атака начинается с того, что попадает к человеку, а заканчивается
+     тем, что данные покидают сеть. Между этим: запуск кода, закрепление в системе и повышение прав.</div>
+  <div class="errmsg" id="m14err" style="display:none"></div>
+  <div class="okmsg" id="m14ok" style="display:none">✅ МИССИЯ 14 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">РАЗБОР ИНЦИДЕНТА</span></div>
+</section>
+
+<section class="card" id="m15">
+  <span class="status" id="st15">0 из 6 задач</span>
+  <span class="tag">МИССИЯ 15 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>🔧 Крипто-инструмент: подбери средство</h2>
+  <p>Четыре инструмента решают разные задачи. Для каждой из шести задач выбери подходящий
+     инструмент в списке. Ошибка в этой миссии не штрафуется — важно разобраться.</p>
+  <div id="c15wrap"></div>
+  <div>
+    <button class="btn primary" id="m15check">✔ ПРОВЕРИТЬ ВЫБОР</button>
+    <button class="btn small" id="m15hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m15hintbox">Запомни так: <b>симметричное</b> — быстро шифрует большие объёмы
+     (файлы, трафик); <b>асимметричное</b> — медленное, зато решает задачу обмена ключами
+     по открытому каналу; <b>хеш</b> — необратимый отпечаток (целостность, пароли);
+     <b>ЭЦП</b> — подпись, которую проверяют чужим открытым ключом.</div>
+  <div class="errmsg" id="m15err" style="display:none"></div>
+  <div class="okmsg" id="m15ok" style="display:none">✅ МИССИЯ 15 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ШИФРОВАНИЕ ДАННЫХ</span></div>
+</section>
+
+<section class="card" id="m16">
+  <span class="status" id="st16">не пройдена</span>
+  <span class="tag">МИССИЯ 16 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>🕳 Стеганография: скрытое послание</h2>
+  <p>Стеганография — это сокрытие самого факта сообщения. В перехваченной служебной записке
+     спрятано одно слово. Аналитики читают такие записки «с краю»: не строчку целиком,
+     а её начало. Собери слово и введи его.</p>
+  <div class="stego" id="h16text"></div>
+  <input type="text" id="m16answer" placeholder="кодовое слово..." autocomplete="off" spellcheck="false">
+  <div style="margin-top:10px">
+    <button class="btn primary" id="m16check">✔ Проверить</button>
+    <button class="btn small" id="m16hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m16hintbox">Выпиши <b>первую букву каждой строки</b> сверху вниз —
+     получится слово из 10 букв. Так прячут сообщения в стихах и документах уже сотни лет.</div>
+  <div class="errmsg" id="m16err" style="display:none"></div>
+  <div class="okmsg" id="m16ok" style="display:none">✅ МИССИЯ 16 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">СТЕГАНОГРАФИЯ</span></div>
+</section>
+
+<section class="card" id="m17">
+  <span class="status" id="st17">0 из 3 запросов</span>
+  <span class="tag">МИССИЯ 17 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>💉 Лог веб-сервера: SQL-инъекция</h2>
+  <p>Атакующие пытаются протащить в запрос собственный SQL-код. Отметь <b>кликами 3 строки</b>
+     с попыткой внедрения, а потом выбери правильную защиту.</p>
+  <div id="w17wrap"></div>
+  <p class="mut" style="margin-top:14px">Как закрыть уязвимость?</p>
+  <div id="w17fix"></div>
+  <div>
+    <button class="btn primary" id="m17check">✔ ПРОВЕРИТЬ</button>
+    <button class="btn small" id="m17hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m17hintbox">Ищи в параметрах спецсимволы и ключевые слова SQL:
+     кавычку (<code>%27</code>), <code>UNION SELECT</code>, функцию <code>SLEEP</code>.
+     Обычный запрос выглядит как <code>/catalog?id=15</code> и лишнего не содержит.</div>
+  <div class="errmsg" id="m17err" style="display:none"></div>
+  <div class="okmsg" id="m17ok" style="display:none">✅ МИССИЯ 17 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ЗАЩИТА ОТ ИНЪЕКЦИЙ</span></div>
+</section>
+
+<section class="card" id="m18">
+  <span class="status" id="st18">не пройдена</span>
+  <span class="tag">МИССИЯ 18 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>📊 Оценка риска: что закрывать первым</h2>
+  <p>Риск считают как <b>вероятность × ущерб</b> (каждый от 1 до 5). Расставь приоритеты: поставь
+     <b>1</b> тому риску, который закрывают первым, и <b>4</b> — последнему. Каждая цифра
+     используется ровно один раз.</p>
+  <div id="r18wrap"></div>
+  <div>
+    <button class="btn primary" id="m18check">✔ ПРОВЕРИТЬ ПРИОРИТЕТЫ</button>
+    <button class="btn small" id="m18hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m18hintbox">Умножай: 5×5 = 25, 3×5 = 15, 2×5 = 10, 3×2 = 6. Чем больше
+     произведение — тем раньше закрывают риск. Редкая, но разрушительная угроза бывает важнее
+     частой и мелкой.</div>
+  <div class="errmsg" id="m18err" style="display:none"></div>
+  <div class="okmsg" id="m18ok" style="display:none">✅ МИССИЯ 18 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ОЦЕНКА РИСКА</span></div>
+</section>
+
+<section class="card" id="m19">
+  <span class="status" id="st19">не пройдена</span>
+  <span class="tag">МИССИЯ 19 · 20 ОЧКОВ · СЛОЖНОСТЬ ★★★★★</span>
+  <h2>📶 Wi-Fi ловушка: выбери сеть</h2>
+  <p>Студент в кампусе ищет, к какой сети подключиться. В списке четыре точки доступа.
+     Кликни по <b>единственной сети, которой можно доверять</b>.</p>
+  <div id="n19wrap"></div>
+  <div>
+    <button class="btn small" id="m19hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m19hintbox">Доверенная сеть всегда требует подтверждения: современное
+     шифрование (WPA3) и вход по логину с сертификатом колледжа. Открытая сеть с похожим названием —
+     типичный «двойник» (Evil Twin).</div>
+  <div class="errmsg" id="m19err" style="display:none"></div>
+  <div id="m19result" class="okmsg" style="display:none"></div>
+  <div class="okmsg" id="m19ok" style="display:none">✅ МИССИЯ 19 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">БЕЗОПАСНЫЙ WI-FI</span></div>
+</section>
+
+<section class="card" id="m20">
+  <span class="status" id="st20">0 из 8 верно</span>
+  <span class="tag">МИССИЯ 20 · 20 ОЧКОВ · ЭКСПЕРТ ★★★★★</span>
+  <h2>🎓 Экзамен отдела ИБ</h2>
+  <p>Восемь вопросов по всему курсу. Ответь на все и нажми «Проверить»: неверные вопросы
+     подсветятся, их можно исправить и попробовать снова. Каждая неудачная попытка стоит 2 очка.</p>
+  <div id="e20wrap"></div>
+  <div>
+    <button class="btn primary" id="m20check">✔ ПРОВЕРИТЬ ОТВЕТЫ</button>
+    <button class="btn small" id="m20hint">💡 Подсказка (−5)</button>
+  </div>
+  <div class="hintbox" id="m20hintbox">Ключевые мысли курса: хеш — необратимый отпечаток; SPF, DKIM
+     и DMARC подтверждают домен отправителя; против инъекций — параметризованные запросы; копии —
+     по правилу 3-2-1; коды из СМС не диктуют никому; первым закрывают риск «вероятность × ущерб»;
+     в открытой сети трафик видят все; при заражении — изолировать и позвать специалиста.</div>
+  <div class="errmsg" id="m20err" style="display:none"></div>
+  <div class="okmsg" id="m20ok" style="display:none">✅ МИССИЯ 20 ПРОЙДЕНА! Фрагмент кода: <span class="fragchip">ПОСТОЯННАЯ ПРАКТИКА</span></div>
+</section>
+
+<section class="card" id="mfinal">
+  <span class="status" id="stf">собрано 0/20</span>
+  <span class="tag">ФИНАЛ · СЕРТИФИКАТ</span>
+  <h2>🏁 Код доступа и сертификат</h2>
+  <p>Каждая миссия выдала по одному фрагменту кода. Соберутся 10 фрагментов (миссии 1–10) —
+     откроется базовый финал и сертификат. Соберутся все 20 — откроется уровень <b>«ЭКСПЕРТ»</b>.</p>
+  <div id="fragbar2" class="center"></div>
+  <p class="mut" id="leftmsg">Осталось собрать фрагментов: <b id="leftcount">20</b>
+     (из них экспертных: <b id="leftexp">10</b>)</p>
+
+  <div id="finalbox" style="display:none">
+    <div class="okmsg" id="finaltitle" style="font-size:20px">🔓 ДОСТУП ОТКРЫТ!</div>
+    <div class="codephrase" id="codephraseOut"></div>
+    <p class="mut" id="finalnote"></p>
+    <div class="center" style="margin-top:14px">
+      <input type="text" id="stname" placeholder="впиши своё ФИО" style="max-width:360px">
+      <div style="margin-top:10px">
+        <button class="btn primary" id="certbtn">🎖 ВЫДАТЬ СЕРТИФИКАТ</button>
+        <button class="btn" id="printbtn" style="display:none">🖨 Печать</button>
+      </div>
+    </div>
+    <div class="cert" id="cert">
+      <div style="font-size:13px; letter-spacing:3px">ОТДЕЛ ИНФОРМАЦИОННОЙ БЕЗОПАСНОСТИ</div>
+      <h2>СЕРТИФИКАТ</h2>
+      <p>настоящим подтверждается, что</p>
+      <div class="name" id="certname">—</div>
+      <p>успешно прошёл(ла) операцию «КИБЕРБАРЬЕР» и показал(а) навыки: парольная защита,
+         сдвиговое и подстановочное шифрование, распознавание фишинга, противодействие
+         социальной инженерии, двухфакторная аутентификация, принцип минимальных прав,
+         анализ журналов событий, проверка доменов, работа в командной строке, контроль
+         целостности файлов, анализ заголовков писем, аудит настроек, разбор цепочки атаки,
+         криптографические примитивы, стеганография, разбор веб-логов, оценка рисков,
+         безопасный Wi-Fi.</p>
+      <p>Код доступа: <b id="certphrase">—</b><br>
+         Очки: <b id="certscore">0</b>/400 · Личный код: <b id="certcode">—</b></p>
+      <p>Уровень: <b id="certlevel">—</b></p>
+      <p style="font-size:13px; color:#7a621f">Дата: <span id="certdate">—</span> ·
+         специальность 10.02.05 · мастер-класс по информационной безопасности</p>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== ДВИЖОК СТЕНДА ================== */
+var FRAGS = ['БЕЗОПАСНОСТЬ','ЭТО','ПРОЦЕСС,','А НЕ','ПРОДУКТ',
+             'И ЕГО','ДЕЛАЮТ','ЛЮДИ','КАЖДЫЙ','ДЕНЬ',
+             'КОНТРОЛЬ ЦЕЛОСТНОСТИ','ПРОВЕРКА ЗАГОЛОВКОВ','АУДИТ НАСТРОЕК','РАЗБОР ИНЦИДЕНТА',
+             'ШИФРОВАНИЕ ДАННЫХ','СТЕГАНОГРАФИЯ','ЗАЩИТА ОТ ИНЪЕКЦИЙ','ОЦЕНКА РИСКА',
+             'БЕЗОПАСНЫЙ WI-FI','ПОСТОЯННАЯ ПРАКТИКА'];
+var MKEY  = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10',
+             'm11','m12','m13','m14','m15','m16','m17','m18','m19','m20'];
+var MNAME = ['Пароль','Шифр','Фишинг','Соц. инженерия','Терминал',
+             'Два фактора','Права доступа','Журнал сервера','Поддельные адреса','Шифр замены',
+             'Хеш-сумма','Заголовки письма','Аудит сервера','Цепочка атаки','Крипто-инструмент',
+             'Стеганография','SQL-инъекция','Оценка риска','Wi-Fi ловушка','Экзамен ИБ'];
+var MDIFF = ['★','★','★','★','★★','★★','★★','★★★','★★★','★★★★',
+             '★★★★','★★★★','★★★★','★★★★★','★★★★★','★★★★★','★★★★★','★★★★★','★★★★★','★★★★★'];
+var MTOTAL = MKEY.length;         /* всего миссий (20)          */
+var BLOCK1 = 10;                  /* базовый блок: миссии 1-10  */
+var TOTALSCORE = MTOTAL * 20;     /* максимум очков (20*20=400) */
+var LSKEY = 'kiberbarier_v3';
+
+var _done = {}, _hints = {};
+for(var _i = 0; _i < MTOTAL; _i++){ _done[MKEY[_i]] = false; _hints[MKEY[_i]] = false; }
+
+var S = { started:false, score:0, timeLeft:3600,
+          done:_done, hints:_hints, code:'', name:'' };
+
+var lastAct = new Date().getTime();
+
+function $(id){ return document.getElementById(id); }
+
+function save(){
+  try{ localStorage.setItem(LSKEY, JSON.stringify(S)); }catch(e){}
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(LSKEY);
+    if(!raw) return false;
+    var o = JSON.parse(raw);
+    if(o && o.done){
+      if(typeof o.score    !== 'number') o.score = 0;
+      if(typeof o.timeLeft !== 'number') o.timeLeft = 3600;
+      if(!o.hints) o.hints = {};
+      if(!o.done)  o.done  = {};
+      for(var i = 0; i < MTOTAL; i++){
+        var k = MKEY[i];
+        if(typeof o.done[k]  !== 'boolean') o.done[k]  = false;
+        if(typeof o.hints[k] !== 'boolean') o.hints[k] = false;
+      }
+      S = o;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+/* ---------- очки ---------- */
+function addScore(n){
+  S.score = S.score + n;
+  if(S.score < 0) S.score = 0;
+  if(S.score > TOTALSCORE) S.score = TOTALSCORE;
+  $('score').textContent = S.score;
+  save();
+}
+
+/* ---------- всплывающие сообщения ---------- */
+var toastTimer = null;
+function toast(msg, bad){
+  var t = $('toast');
+  t.innerHTML = msg;
+  t.className = 'toast' + (bad ? ' bad' : '');
+  t.style.display = 'block';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.display = 'none'; }, 6500);
+}
+
+/* ---------- таймер ---------- */
+function fmt(sec){
+  var m = Math.floor(sec/60), s = sec % 60;
+  return (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+}
+function tick(){
+  if(S.started && S.timeLeft > 0) S.timeLeft--;
+  var el = $('timer');
+  el.textContent = '⏱ ' + fmt(S.timeLeft);
+  if(S.started && S.timeLeft <= 300) el.className = 'box warn';
+  if(S.started && S.timeLeft === 0 && !S.over){
+    S.over = true;
+    toast('⏰ Время вышло! Но стенд не блокируется — дойди до сертификата и получи его.', true);
+  }
+  if(S.timeLeft % 10 === 0) save();
+}
+
+/* ---------- фрагменты кода ---------- */
+function doneCount(){
+  var c = 0;
+  for(var i=0;i<MTOTAL;i++){ if(S.done[MKEY[i]]) c++; }
+  return c;
+}
+function renderFrags(){
+  var c = doneCount(), html = '';
+  for(var i=0;i<MTOTAL;i++){
+    var open = S.done[MKEY[i]];
+    html += '<span class="fragchip' + (open?'':' empty') + '">' +
+            (open ? FRAGS[i] : 'ФРАГМЕНТ ' + (i+1)) + '</span>';
+  }
+  $('fragbar').innerHTML  = html;
+  $('fragbar2').innerHTML = html;
+
+  var expLeft = 0;
+  for(var j = BLOCK1; j < MTOTAL; j++){ if(!S.done[MKEY[j]]) expLeft++; }
+
+  $('progbar').style.width = (c/MTOTAL*100) + '%';
+  $('leftcount').textContent = MTOTAL - c;
+  $('leftexp').textContent = expLeft;
+  $('stf').textContent = 'собрано ' + c + '/' + MTOTAL;
+  $('stf').className = 'status' + ((c >= BLOCK1) ? ' ok' : '');
+  $('leftmsg').style.display = (c === MTOTAL) ? 'none' : '';
+  if(c >= BLOCK1) openFinal(c === MTOTAL);
+}
+
+/* ---------- навигация по миссиям ---------- */
+function renderNav(){
+  var h = '';
+  for(var i=0;i<MTOTAL;i++){
+    var ok = S.done[MKEY[i]];
+    h += '<div class="mcard' + (ok?' finished':'') + '" data-go="' + MKEY[i] + '">' +
+         '<div class="num">' + (ok ? '✔' : 'МИССИЯ ' + (i+1)) + '</div>' +
+         '<div class="st">' + MNAME[i] + '</div>' +
+         '<div class="diff">' + MDIFF[i] + '</div></div>';
+  }
+  $('mnav').innerHTML = h;
+  var cards = $('mnav').getElementsByClassName('mcard');
+  for(var j=0;j<cards.length;j++){
+    cards[j].onclick = function(){
+      document.getElementById(this.getAttribute('data-go')).scrollIntoView();
+    };
+  }
+}
+
+/* ---------- завершение миссии ---------- */
+var OKID = {}, STID = {};
+for(var _m = 0; _m < MTOTAL; _m++){
+  STID[MKEY[_m]] = 'st' + (_m + 1);
+  OKID[MKEY[_m]] = 'm' + (_m + 1) + 'ok';
+}
+
+function complete(mid){
+  if(S.done[mid]) return;
+  S.done[mid] = true;
+  addScore(20);
+  var card = document.getElementById(mid);
+  if(card) card.className = 'card done';
+  var stEl = $(STID[mid]);
+  if(stEl){ stEl.textContent = '✔ ПРОЙДЕНА'; stEl.className = 'status ok'; }
+  var okEl = $(OKID[mid]);
+  if(okEl) okEl.style.display = 'block';
+  renderNav();
+  renderFrags();
+  save();
+  toast('🎉 Миссия пройдена! +20 очков. Собрано фрагментов: ' + doneCount() + '/' + MTOTAL + '.');
+}
+
+/* ---------- подсказки ---------- */
+function wireHint(btnId, boxId, mid){
+  $(btnId).onclick = function(){
+    $(boxId).className = 'hintbox show';
+    if(!S.hints[mid]){
+      S.hints[mid] = true;
+      addScore(-5);
+      toast('💡 Подсказка открыта (−5 очков). Спокойно, это того стоило.');
+    }
+  };
+}
+
+/* ---------- финальный экран (два уровня) ---------- */
+function openFinal(expert){
+  if(!S.code){
+    S.code = 'KB-' + Math.floor(100000 + Math.random() * 899999);
+    save();
+  }
+  var got = [];
+  for(var i=0;i<MTOTAL;i++){ if(S.done[MKEY[i]]) got.push(FRAGS[i]); }
+
+  $('finalbox').style.display = 'block';
+  $('codephraseOut').innerHTML = '🔑 ' + got.join(' ');
+  $('finaltitle').innerHTML = expert
+    ? '🔓 ПОЛНЫЙ ДОСТУП! Уровень «ЭКСПЕРТ» — 20 из 20 миссий:'
+    : '🔓 БАЗОВЫЙ ДОСТУП ОТКРЫТ (' + got.length + ' из ' + MTOTAL + '). Твои фрагменты:';
+  $('finalnote').innerHTML = expert
+    ? 'Что это значит: базовые правила держат защиту, а экспертные навыки её усиливают. ' +
+      'Контроль целостности, проверка заголовков писем, аудит настроек, разбор инцидента, ' +
+      'шифрование данных, стеганография, защита от инъекций, оценка риска, безопасный Wi-Fi ' +
+      'и постоянная практика — вот из чего складывается работа специалиста по ИБ.'
+    : 'Ты собрал базовый уровень. Дальше — <b>экспертный блок</b>: хеш-суммы и целостность файлов, ' +
+      'заголовки писем (SPF/DKIM/DMARC), аудит настроек сервера, цепочка атаки, криптографические ' +
+      'инструменты, стеганография, SQL-инъекции в логах, оценка рисков, поддельные Wi-Fi сети ' +
+      'и финальный экзамен отдела. Собери все 20 фрагментов!';
+}
+
+/* ---------- сертификат ---------- */
+function issueCert(){
+  var nm = ($('stname').value || '').replace(/^\s+|\s+$/g,'');
+  if(nm.length < 3){ toast('Впиши своё ФИО (хотя бы 3 символа) — иначе сертификат безымянный.', true); return; }
+  S.name = nm; save();
+  var d = new Date();
+  var dd = (d.getDate()<10?'0':'') + d.getDate();
+  var mm = (d.getMonth()+1<10?'0':'') + (d.getMonth()+1);
+  $('certname').textContent  = nm;
+  $('certscore').textContent = S.score;
+  $('certcode').textContent  = S.code || '—';
+  $('certdate').textContent  = dd + '.' + mm + '.' + d.getFullYear();
+
+  var got = [], cdone = doneCount();
+  for(var ci=0;ci<MTOTAL;ci++){ if(S.done[MKEY[ci]]) got.push(FRAGS[ci]); }
+  $('certphrase').textContent = got.join(' ');
+  $('certlevel').textContent  = (cdone >= MTOTAL)
+      ? 'ЭКСПЕРТ — все ' + MTOTAL + ' миссий пройдены'
+      : 'БАЗОВЫЙ — ' + cdone + ' из ' + MTOTAL + ' миссий';
+  $('cert').style.display = 'block';
+  $('printbtn').style.display = 'inline-block';
+  toast('🎖 Сертификат готов! Сделай скриншот или нажми «Печать».');
+  $('cert').scrollIntoView();
+}
+
+/* ================== МИССИЯ 1: пароль ================== */
+var WEAK = ['123456','1234567890','12345678','qwerty','qwerty1','qwerty123','password',
+            'parol','admin','111111','abc123','йцукен','любовь','даша','наташа','12345'];
+function hasLower(p){ return /[a-zа-яё]/.test(p); }
+function hasUpper(p){ return /[A-ZА-ЯЁ]/.test(p); }
+function hasDigit(p){ return /[0-9]/.test(p); }
+function hasSym(p){   return /[^a-zA-Zа-яА-ЯёЁ0-9]/.test(p); }
+function isWeak(p){   return WEAK.indexOf(p.toLowerCase()) >= 0; }
+
+var PWCHECKS = [
+  {t:'не короче 12 символов',              f:function(p){ return p.length >= 12; }},
+  {t:'есть маленькие буквы',               f:hasLower},
+  {t:'есть ЗАГЛАВНЫЕ буквы',               f:hasUpper},
+  {t:'есть цифры',                         f:hasDigit},
+  {t:'есть знак (!, #, %, $, -)',          f:hasSym},
+  {t:'нет в списке самых частых паролей',   f:function(p){ return !isWeak(p); }}
+];
+
+function humanTime(s){
+  if(s < 1)        return 'мгновенно';
+  if(s < 60)       return Math.round(s) + ' сек';
+  var m = s/60;    if(m < 60)      return Math.round(m) + ' мин';
+  var h = m/60;    if(h < 24)      return Math.round(h) + ' ч';
+  var d = h/24;    if(d < 31)      return Math.round(d) + ' дн';
+  var y = d/365;   if(y < 1000)    return Math.round(y) + ' лет';
+  if(y < 1000000)  return Math.round(y/1000) + ' тыс. лет';
+  if(y < 1000000000) return Math.round(y/1000000) + ' млн лет';
+  if(y < 1000000000000) return Math.round(y/1000000000) + ' млрд лет';
+  return 'миллиарды лет (не подобрать)';
+}
+function pwEstimate(p){
+  if(!p) return 'мгновенно';
+  if(isWeak(p)) return 'мгновенно (пароль из базы хакеров)';
+  var pool = 0;
+  if(/[a-z]/.test(p)) pool += 26;
+  if(/[A-Z]/.test(p)) pool += 26;
+  if(/[а-я]/.test(p)) pool += 33;
+  if(/[А-Я]/.test(p)) pool += 33;
+  if(/[0-9]/.test(p)) pool += 10;
+  if(hasSym(p))       pool += 33;
+  if(!pool) return 'мгновенно';
+  var guesses = Math.pow(pool, p.length);
+  return humanTime(guesses / 10000000000 / 2);
+}
+function pwStrength(p){
+  if(!p) return 0;
+  if(isWeak(p)) return 5;
+  var b = Math.min(40, p.length * 3);
+  if(hasLower(p)) b += 10;
+  if(hasUpper(p)) b += 15;
+  if(hasDigit(p)) b += 15;
+  if(hasSym(p))   b += 20;
+  return Math.min(100, b);
+}
+function updatePw(p){
+  var st = pwStrength(p);
+  $('pwfill').style.width = st + '%';
+  $('pwfill').style.background = st >= 80 ? '#00ff9c' : (st >= 50 ? '#ffd166' : '#ff5c5c');
+  $('pwtime').textContent = p ? pwEstimate(p) : 'мгновенно';
+
+  var h = '', all = true;
+  for(var i=0;i<PWCHECKS.length;i++){
+    var ok = PWCHECKS[i].f(p);
+    if(!ok) all = false;
+    h += '<li class="' + (ok ? 'ok' : '') + '">' + PWCHECKS[i].t + '</li>';
+  }
+  $('pwcheck').innerHTML = h;
+
+  var v = $('pwverdict');
+  if(!p)              v.textContent = '—';
+  else if(isWeak(p))  v.textContent = 'этот пароль есть в базах хакеров — меняй немедленно';
+  else if(st >= 80)   v.textContent = 'отличный пароль, этим можно защищаться';
+  else if(st >= 50)   v.textContent = 'уже неплохо, добавь длину и знаки';
+  else                v.textContent = 'слабовато, хакер справится быстро';
+
+  if(p.length > 0 && all) complete('m1');
+}
+
+/* ================== МИССИЯ 2: шифр Цезаря ================== */
+var M2ALPHA = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+var M2CODES = [1061,1054,1056,1054,1064,1054,32,1058,1067,32,
+               1057,1055,1056,1040,1042,1048,1051,1057,1071];
+var M2SHIFT = 5;
+
+function m2plain(){
+  var s = '';
+  for(var i=0;i<M2CODES.length;i++) s += String.fromCharCode(M2CODES[i]);
+  return s;
+}
+function m2rotate(text, sh){
+  var out = '', n = M2ALPHA.length, t = String(text).toUpperCase();
+  for(var i=0;i<t.length;i++){
+    var idx = M2ALPHA.indexOf(t.charAt(i));
+    out += (idx < 0) ? t.charAt(i) : M2ALPHA.charAt(((idx + sh) % n + n) % n);
+  }
+  return out;
+}
+function m2norm(s){
+  return String(s).toUpperCase().replace(/Ё/g,'Е')
+         .replace(/\s+/g,' ').replace(/^\s+|\s+$/g,'');
+}
+function m2init(){
+  var cipher = m2rotate(m2plain(), M2SHIFT);
+  $('plainview').textContent = cipher;
+  $('shiftval').textContent = '0';
+  var sl = $('shiftslider');
+  sl.value = 0;
+  sl.oninput = function(){
+    var sh = parseInt(this.value, 10) || 0;
+    $('shiftval').textContent = sh;
+    $('plainview').textContent = m2rotate(cipher, -sh);
+  };
+  $('m2check').onclick = m2check;
+  $('m2answer').onkeydown = function(e){ if(e.keyCode === 13) m2check(); };
+}
+function m2check(){
+  var u = m2norm($('m2answer').value);
+  var p = m2norm(m2plain());
+  var err = $('m2err');
+  if(!u){
+    err.textContent = 'Поле пустое. Подвигай ползунок, прочитай фразу и впиши её.';
+    err.style.display = 'block';
+    return;
+  }
+  if(u === p){
+    err.style.display = 'none';
+    complete('m2');
+    toast('🔓 Верно! Ключ был 5. Читаемый текст получен — значит, шифр был нестойким.');
+  } else {
+    err.textContent = 'Пока не то. Ключ точно от 1 до 10, и слова должны получиться обычные русские.';
+    err.style.display = 'block';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 3: фишинг ================== */
+var PH_TOTAL = 6;
+var PH_ORDER = ['sender','subject','hello','link','file','sms'];
+var PH_FOUND = {};
+var PH_EXPL = {
+  sender:'<b>Отправитель.</b> Домен <code>bank-online-bezopasnost.cc</code> — не домен банка. ' +
+         'Хакеры берут похожее имя и добавляют «bezopasnost», чтобы выглядело надёжно. ' +
+         'Читай то, что стоит после знака @.',
+  subject:'<b>Тема письма.</b> «СРОЧНО», «заблокируем через 24 часа» — искусственная паника. ' +
+          'Пока человек в панике, он не проверяет. Настоящий банк не угрожает по почте.',
+  hello:'<b>Обращение.</b> «Уважаемый клиент» без имени. Банк знает ФИО. ' +
+        'Безликое обращение означает массовую рассылку на тысячи адресов.',
+  link:'<b>Ссылка.</b> Кнопка ведёт не на сайт банка, а на чужой домен. ' +
+       'Перед кликом наведи курсор на ссылку и посмотри адрес внизу браузера.',
+  file:'<b>Вложение.</b> Расширение <code>.exe</code> — это исполняемая программа, а не квитанция. ' +
+       'Открыть такой файл = запустить вредоносный код на своём компьютере.',
+  sms:'<b>Код из SMS.</b> Банк НИКОГДА не просит код из SMS. Этот код подтверждает операцию: ' +
+      'сообщив его, ты сам подпишешь перевод мошеннику.'
+};
+var PH_CLEAN = {
+  to:'Здесь всё в порядке: адрес получателя — это твоя собственная почта. ' +
+     'Не всё в письме является обманом, важно уметь отличать.'
+};
+
+function phFoundCount(){
+  var c = 0;
+  for(var k in PH_FOUND){ if(PH_FOUND[k]) c++; }
+  return c;
+}
+function phClick(el){
+  var slot = el.getAttribute('data-slot');
+  if(PH_CLEAN[slot]){ toast(PH_CLEAN[slot]); return; }
+  if(!slot || PH_FOUND[slot]) return;
+
+  PH_FOUND[slot] = true;
+  if(el.className.indexOf('found') < 0) el.className += ' found';
+  phLog();
+
+  var n = phFoundCount();
+  $('st3').textContent = 'найдено ' + n + '/' + PH_TOTAL;
+  if(n >= PH_TOTAL){
+    $('st3').className = 'status ok';
+    complete('m3');
+  } else {
+    toast('🔍 Ловушка найдена (' + n + '/' + PH_TOTAL + '). Подробности — в журнале разбора ниже.');
+  }
+}
+function phLog(){
+  if(!phFoundCount()){
+    $('phlog').className = 'mut';
+    $('phlog').innerHTML = 'Пока ничего не найдено. Начинай кликать по письму выше.';
+    return;
+  }
+  var h = '<ul class="check">';
+  for(var i=0;i<PH_ORDER.length;i++){
+    var s = PH_ORDER[i], on = !!PH_FOUND[s];
+    h += '<li class="' + (on ? 'ok' : '') + '">' +
+         (on ? PH_EXPL[s] : 'ловушка пока не найдена') + '</li>';
+  }
+  h += '</ul>';
+  $('phlog').className = '';
+  $('phlog').innerHTML = h;
+}
+function m3init(){
+  PH_FOUND = {};
+  var spots = document.getElementById('m3').getElementsByClassName('spot');
+  var arr = [];
+  for(var i=0;i<spots.length;i++) arr.push(spots[i]);
+  for(var k=0;k<arr.length;k++){
+    arr[k].onclick = function(){ phClick(this); };
+  }
+  phLog();
+}
+
+/* ================== МИССИЯ 4: социальная инженерия ================== */
+var Q4 = [
+  {q:'Звонит «служба безопасности банка» и просит назвать код из SMS, чтобы «отменить перевод мошенникам».',
+   bad:true, why:'Код из SMS — ключ к твоим деньгам. Его не должен знать никто, даже тот, кто звонит «из банка».'},
+  {q:'Незнакомый мужчина в форме охранника просит открыть дверь в серверную: «Забыл пропуск, начальник ждёт».',
+   bad:true, why:'У настоящего сотрудника есть пропуск. Проверить полномочия — обязанность, а не грубость.'},
+  {q:'В аудитории на столе лежит флешка с наклейкой «Зарплата». Ты вставляешь её в свой компьютер.',
+   bad:true, why:'Это атака «USB-дроп»: специально оставленная флешка может запустить вредоносную программу сама.'},
+  {q:'Один и тот же пароль используется для почты, личного кабинета колледжа и игрового аккаунта.',
+   bad:true, why:'Утечка на одном сайте открывает злоумышленнику все твои сервисы. Для каждого — свой пароль.'},
+  {q:'Одногруппник просит на 5 минут твой логин и пароль от личного кабинета: «Только расписание посмотреть».',
+   bad:true, why:'Пароль не передают даже друзьям. Нужен доступ — пусть посмотрит у тебя на экране.'},
+  {q:'От друга пришло сообщение со ссылкой «смотри фото с вечеринки». Ты сначала звонишь другу и спрашиваешь, он ли это отправлял.',
+   bad:false, why:'Аккаунт друга могли взломать. Один звонок — и ты точно знаешь, безопасна ли ссылка.'}
+];
+var Q4_SOLVED = {};
+function q4solved(){
+  var c = 0;
+  for(var k in Q4_SOLVED){ if(Q4_SOLVED[k]) c++; }
+  return c;
+}
+function q4answer(btn){
+  var i = parseInt(btn.getAttribute('data-q'), 10);
+  var said = btn.getAttribute('data-a') === '1';
+  if(Q4_SOLVED[i]) return;
+
+  var box = $('q4_' + i), why = $('why4_' + i);
+  why.style.display = 'block';
+
+  if(said === Q4[i].bad){
+    Q4_SOLVED[i] = true;
+    box.className = 'qcard ok';
+    why.innerHTML = '<b>Верно.</b> ' + Q4[i].why;
+    var n = q4solved();
+    $('st4').textContent = n + ' из ' + Q4.length + ' решено';
+    if(n >= Q4.length){
+      $('st4').className = 'status ok';
+      complete('m4');
+    } else {
+      toast('👍 Правильно! Решено ' + n + ' из ' + Q4.length + '.');
+    }
+  } else {
+    box.className = 'qcard bad';
+    why.innerHTML = '<b>Не совсем.</b> ' + Q4[i].why + ' Выбери другой вариант.';
+    addScore(-2);
+    toast('❌ Мимо. Прочитай объяснение и нажми второй вариант.', true);
+  }
+}
+function m4init(){
+  Q4_SOLVED = {};
+  var h = '';
+  for(var i=0;i<Q4.length;i++){
+    h += '<div class="qcard" id="q4_' + i + '">' +
+         '<b>Ситуация ' + (i+1) + '.</b> ' + Q4[i].q +
+         '<div class="qbtns">' +
+         '<button class="btn small" data-q="' + i + '" data-a="1">⚠ ОПАСНО</button> ' +
+         '<button class="btn small" data-q="' + i + '" data-a="0">✅ БЕЗОПАСНО</button>' +
+         '</div><div class="mut" id="why4_' + i + '" style="display:none"></div></div>';
+  }
+  $('qwrap').innerHTML = h;
+  var btns = $('qwrap').getElementsByTagName('button');
+  var arr = [];
+  for(var j=0;j<btns.length;j++) arr.push(btns[j]);
+  for(var k=0;k<arr.length;k++){ arr[k].onclick = function(){ q4answer(this); }; }
+}
+
+/* ================== МИССИЯ 5: терминал ================== */
+var T = { scanned:false, cracked:false, flagged:false, target:'' };
+
+function tw(html, cls){
+  var d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.innerHTML = html;
+  $('termout').appendChild(d);
+  $('termout').scrollTop = $('termout').scrollHeight;
+}
+function m5init(){
+  T = { scanned:false, cracked:false, flagged:false, target:'' };
+  $('termout').innerHTML = '';
+  tw('Учебный терминал отдела ИБ. Все действия безопасны: это тренажёр.', 'sys');
+  tw('Введи <b>help</b>, чтобы увидеть список команд.', 'sys');
+  $('termbtn').onclick = termRun;
+  $('terminput').onkeydown = function(e){ if(e.keyCode === 13) termRun(); };
+}
+function termRun(){
+  var raw = $('terminput').value.replace(/^\s+|\s+$/g, '');
+  if(!raw) return;
+  $('terminput').value = '';
+  tw('student@kiberbarier:~$ ' + raw, 'cmd');
+  termExec(raw);
+  save();
+}
+function termExec(raw){
+  var parts = raw.split(/\s+/);
+  var cmd = parts[0].toLowerCase();
+  var arg = parts[1] ? parts[1].toLowerCase() : '';
+
+  if(cmd === 'help'){
+    tw('Доступные команды:', 'sys');
+    tw('&nbsp; help&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — эта справка<br>' +
+       '&nbsp; whoami&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — кто я в системе<br>' +
+       '&nbsp; ls&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — файлы в текущей папке<br>' +
+       '&nbsp; cat &lt;файл&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — посмотреть файл<br>' +
+       '&nbsp; scan &lt;ip&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — просканировать узел сети<br>' +
+       '&nbsp; crack&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — запустить подбор пароля<br>' +
+       '&nbsp; flag&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — получить служебный флаг<br>' +
+       '&nbsp; clear&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — очистить экран', '');
+    return;
+  }
+  if(cmd === 'clear'){ $('termout').innerHTML = ''; return; }
+  if(cmd === 'whoami'){
+    tw('student — стажёр отдела информационной безопасности.', '');
+    tw('Задача: найти уязвимость в учебной сети и понять, как её закрыть.', 'sys');
+    return;
+  }
+  if(cmd === 'ls'){
+    tw('notes.txt&nbsp;&nbsp;&nbsp;&nbsp; firewall.log&nbsp;&nbsp;&nbsp;&nbsp; target.list', '');
+    return;
+  }
+  if(cmd === 'cat'){
+    if(!arg){ tw('Укажи файл. Например: cat notes.txt', 'err'); return; }
+    if(arg === 'notes.txt'){
+      tw('Цель: 192.168.1.10 (учебный сервер).', '');
+      tw('Порядок работы: сначала скан портов, затем подбор пароля.', 'sys');
+      return;
+    }
+    if(arg === 'firewall.log'){
+      tw('Правила межсетевого экрана:', '');
+      tw('&nbsp; 22/tcp&nbsp;&nbsp; ALLOW&nbsp;&nbsp; SSH<br>' +
+         '&nbsp; 80/tcp&nbsp;&nbsp; ALLOW&nbsp;&nbsp; HTTP<br>' +
+         '&nbsp; 3306/tcp DENY&nbsp;&nbsp;&nbsp; база данных закрыта снаружи', '');
+      tw('Мысль дня: закрыть лишние порты — самое простое, что делает специалист ИБ.', 'sys');
+      return;
+    }
+    if(arg === 'target.list'){
+      tw('192.168.1.10 — учебный сервер отдела (тренажёр).', '');
+      return;
+    }
+    tw('cat: ' + arg + ': нет такого файла (посмотри список: ls)', 'err');
+    return;
+  }
+  if(cmd === 'scan'){
+    if(!arg){ tw('Укажи адрес. Например: scan 192.168.1.10', 'err'); return; }
+    if(arg !== '192.168.1.10'){
+      tw('Узел ' + arg + ' не отвечает.', 'err');
+      tw('Точный адрес цели записан в файле notes.txt (посмотри: cat notes.txt).', 'sys');
+      return;
+    }
+    tw('Сканирую 192.168.1.10 ...', 'sys');
+    tw('[22/tcp]&nbsp;&nbsp;&nbsp; OPEN&nbsp;&nbsp;&nbsp; SSH&nbsp;&nbsp;&nbsp;&nbsp; OpenSSH 7.2&nbsp; &lt;-- устаревшая версия', '');
+    tw('[80/tcp]&nbsp;&nbsp;&nbsp; OPEN&nbsp;&nbsp;&nbsp; HTTP&nbsp;&nbsp;&nbsp; nginx 1.10', '');
+    tw('[3306/tcp] CLOSED&nbsp; MySQL&nbsp;&nbsp; база данных недоступна снаружи', '');
+    tw('Вывод: у SSH устаревшая версия, у неё есть известная уязвимость. ' +
+       'Правильное решение специалиста — обновить ПО, а не «надеяться на лучшее».', 'sys');
+    T.scanned = true; T.target = arg;
+    return;
+  }
+  if(cmd === 'crack'){
+    if(!T.scanned){
+      tw('Сначала нужен скан цели: scan 192.168.1.10', 'err');
+      return;
+    }
+    tw('Подбираю пароль к узлу ' + T.target + ' ...', 'sys');
+    tw('[##########] 100%&nbsp;&nbsp;&nbsp; время: 0.4 секунды', '');
+    tw('Пароль найден: <b>qwerty123</b>', '');
+    tw('Вывод: такого пароля в словаре хакера нет только у того, кто никогда не видел клавиатуру. ' +
+       'Слабый пароль подбирается мгновенно — и техника тут ни при чём.', 'sys');
+    T.cracked = true;
+    return;
+  }
+  if(cmd === 'flag'){
+    if(!(T.scanned && T.cracked)){
+      tw('Доступ запрещён. Нужно выполнить scan и crack.', 'err');
+      return;
+    }
+    if(T.flagged){ tw('Флаг уже выдан: FRAGMENT-5 :: ПРОДУКТ', 'sys'); return; }
+    tw('==============================================', 'sys');
+    tw('СЛУЖЕБНЫЙ ФЛАГ ПОЛУЧЕН: FRAGMENT-5 :: ПРОДУКТ', 'sys');
+    tw('==============================================', 'sys');
+    tw('Ты прошёл путь специалиста: заметил уязвимость в устаревшей версии ПО и понял, ' +
+       'что слабый пароль ломается за долю секунды.', '');
+    T.flagged = true;
+    complete('m5');
+    return;
+  }
+  tw(cmd + ': команда не найдена. Введи help, чтобы увидеть список команд.', 'err');
+}
+
+/* ================== МИССИЯ 6: двухфакторная аутентификация ================== */
+var F6 = [
+  {name:'Пароль от почты',                        type:'знание'},
+  {name:'Код из приложения на телефоне',          type:'владение'},
+  {name:'Отпечаток пальца',                       type:'биометрия'},
+  {name:'Секретный вопрос «девичья фамилия мамы»', type:'знание'}
+];
+var F6_TYPE = {знание:'то, что ты знаешь', владение:'то, что у тебя есть', биометрия:'то, что ты есть'};
+var F6_SEL = {};
+
+function f6init(){
+  F6_SEL = {};
+  var h = '';
+  for(var i=0;i<F6.length;i++){
+    h += '<div class="keycard" data-k="' + i + '"><b>🔑 ' + F6[i].name + '</b>' +
+         '<div class="typ">тип: ' + F6_TYPE[F6[i].type] + '</div></div>';
+  }
+  $('keygrid').innerHTML = h;
+  var cards = $('keygrid').getElementsByClassName('keycard');
+  var arr = [];
+  for(var j=0;j<cards.length;j++) arr.push(cards[j]);
+  for(var k=0;k<arr.length;k++){ arr[k].onclick = function(){ f6toggle(this); }; }
+  $('m6result').innerHTML = '';
+  $('m6check').onclick = f6check;
+}
+function f6toggle(el){
+  var i = el.getAttribute('data-k');
+  if(F6_SEL[i]){ delete F6_SEL[i]; el.className = 'keycard'; }
+  else { F6_SEL[i] = true; el.className = 'keycard sel'; }
+}
+function f6picked(){
+  var out = [];
+  for(var k in F6_SEL){ out.push(F6[parseInt(k, 10)]); }
+  return out;
+}
+function f6check(){
+  if(S.done.m6) return;
+  var p = f6picked(), res = $('m6result');
+  if(p.length !== 2){
+    res.innerHTML = '<span class="errmsg">Выбери ровно <b>два</b> ключа — сейчас выбрано ' +
+                    p.length + '.</span>';
+    return;
+  }
+  if(p[0].type !== p[1].type){
+    res.innerHTML = '<b>Хакер ввёл украденный пароль.</b> Система требует второй фактор — ' +
+      '«' + p[1].name + '» (' + F6_TYPE[p[1].type] + '), а у хакера его нет. ' +
+      '<span class="okmsg">Вход заблокирован, атака остановлена.</span>' +
+      '<br><i>Ровно так работает двухфакторная аутентификация: пароль + другой тип подтверждения.</i>';
+    complete('m6');
+  } else {
+    res.innerHTML = '<b>Хакер ввёл украденный пароль.</b> Оба твоих ключа — одного типа ' +
+      '(' + F6_TYPE[p[0].type] + '): пароль он украл, а ответ на секретный вопрос угадал — ' +
+      'такие ответы обычно лежат в соцсетях. ' +
+      '<span class="errmsg">Вход разрешён, атака удалась.</span>' +
+      '<br><i>Два ключа одного типа — это по-прежнему один замок.</i>';
+  }
+}
+
+/* ================== МИССИЯ 7: минимальные права ================== */
+var P7_RES = ['Файлы бухгалтерии','Сервер разработки','Журналы доступа','Настройки системы','Учебный стенд'];
+var P7_ROLES = [
+  {name:'Ирина (бухгалтер)',       need:[0]},
+  {name:'Олег (программист)',      need:[1]},
+  {name:'Сергей (администратор)',  need:[1,2,3]},
+  {name:'Аня (стажёр)',            need:[4]}
+];
+
+function p7init(){
+  var h = '<table class="matrix"><tr><th style="text-align:left">Сотрудник</th>';
+  for(var r=0;r<P7_RES.length;r++) h += '<th>' + P7_RES[r] + '</th>';
+  h += '</tr>';
+  for(var i=0;i<P7_ROLES.length;i++){
+    h += '<tr><td class="role">' + P7_ROLES[i].name + '</td>';
+    for(var j=0;j<P7_RES.length;j++){
+      h += '<td><input type="checkbox" data-role="' + i + '" data-res="' + j + '"></td>';
+    }
+    h += '</tr>';
+  }
+  $('m7table').innerHTML = h + '</table>';
+  $('m7check').onclick = p7check;
+}
+function p7box(i, j){
+  var boxes = $('m7table').getElementsByTagName('input');
+  for(var k=0;k<boxes.length;k++){
+    if(parseInt(boxes[k].getAttribute('data-role'), 10) === i &&
+       parseInt(boxes[k].getAttribute('data-res'), 10) === j) return boxes[k];
+  }
+  return null;
+}
+function p7check(){
+  if(S.done.m7) return;
+  var extra = 0, missing = 0;
+  for(var i=0;i<P7_ROLES.length;i++){
+    for(var j=0;j<P7_RES.length;j++){
+      var box = p7box(i, j);
+      var on = !!(box && box.checked);
+      var need = P7_ROLES[i].need.indexOf(j) >= 0;
+      if(on && !need) extra++;
+      if(!on && need) missing++;
+    }
+  }
+  var err = $('m7err');
+  if(extra === 0 && missing === 0){
+    err.style.display = 'none';
+    complete('m7');
+    return;
+  }
+  err.style.display = 'block';
+  err.innerHTML = 'Пока не так: лишних разрешений — <b>' + extra + '</b>, ' +
+                  'не хватает — <b>' + missing + '</b>. Лишнее сними, недостающее добавь.';
+}
+
+/* ================== МИССИЯ 8: журнал сервера ================== */
+var L8 = [
+  {t:'08:12:03', what:'login ирина',   res:'ok',     ip:'192.168.1.51', attack:false},
+  {t:'08:14:20', what:'login олег',    res:'ok',     ip:'192.168.1.62', attack:false},
+  {t:'08:15:01', what:'login олег',    res:'FAILED', ip:'192.168.1.62', attack:false},
+  {t:'08:15:40', what:'login олег',    res:'ok',     ip:'192.168.1.62', attack:false},
+  {t:'08:31:12', what:'login admin',   res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:31:14', what:'login admin',   res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:31:15', what:'login root',    res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:31:16', what:'login admin',   res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:31:18', what:'login admin',   res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:31:19', what:'login admin',   res:'FAILED', ip:'203.0.113.45', attack:true},
+  {t:'08:45:02', what:'login аня',     res:'ok',     ip:'192.168.1.71', attack:false},
+  {t:'09:02:33', what:'backup system', res:'ok',     ip:'local',        attack:false}
+];
+var L8_SEL = {};
+
+function l8init(){
+  L8_SEL = {};
+  var h = '';
+  for(var i=0;i<L8.length;i++){
+    h += '<div class="logrow" data-l="' + i + '">' +
+         '<span class="t">' + L8[i].t + '</span>&nbsp;&nbsp;' + L8[i].what +
+         '&nbsp;&nbsp;<span class="' + (L8[i].res === 'FAILED' ? 'fail' : '') + '">' + L8[i].res + '</span>' +
+         '&nbsp;&nbsp;<span class="t">' + L8[i].ip + '</span></div>';
+  }
+  $('logwrap').innerHTML = h;
+  var rows = $('logwrap').getElementsByClassName('logrow');
+  var arr = [];
+  for(var j=0;j<rows.length;j++) arr.push(rows[j]);
+  for(var k=0;k<arr.length;k++){ arr[k].onclick = function(){ l8toggle(this); }; }
+  $('m8check').onclick = l8check;
+  $('m8err').style.display = 'none';
+  $('m8result').style.display = 'none';
+}
+function l8toggle(el){
+  if(S.done.m8) return;
+  var i = el.getAttribute('data-l');
+  if(L8_SEL[i]){ delete L8_SEL[i]; el.className = 'logrow'; }
+  else { L8_SEL[i] = true; el.className = 'logrow sel'; }
+}
+function l8check(){
+  if(S.done.m8) return;
+  var wrong = 0, missed = 0, picked = 0;
+  for(var i=0;i<L8.length;i++){
+    var on = !!L8_SEL[i];
+    if(on) picked++;
+    if(on && !L8[i].attack)  wrong++;
+    if(!on && L8[i].attack)  missed++;
+  }
+  var err = $('m8err');
+  if(wrong === 0 && missed === 0){
+    err.style.display = 'none';
+    var res = $('m8result');
+    res.style.display = 'block';
+    res.innerHTML = '<b>Верно!</b> Шесть неудачных попыток за 8 секунд с одного внешнего адреса ' +
+      '(<code>203.0.113.45</code>), причём пробуют имена <code>admin</code> и <code>root</code> — ' +
+      'это подбор пароля, брутфорс. Одна неудачная попытка Олега — обычная опечатка со своего адреса.<br>' +
+      'Что делает специалист: ограничивает число попыток входа, блокирует адрес, включает ' +
+      'двухфакторную аутентификацию и проверяет, не удалось ли злоумышленнику войти.';
+    complete('m8');
+    return;
+  }
+  err.style.display = 'block';
+  err.innerHTML = 'Пока не так: отмечено строк — <b>' + picked + '</b>, лишних отметок — <b>' + wrong +
+                  '</b>, пропущено — <b>' + missed + '</b>. Сравни адреса и время между строками.';
+}
+
+/* ================== МИССИЯ 9: поддельные адреса ================== */
+var CYR_A = String.fromCharCode(1072);   /* кириллическая «а» — визуальный двойник латинской */
+var U9 = [
+  {fake:1, a:'shop.ru', b:'shop.ru.sale-pay.cc',
+   why:'Имя сайта — то, что стоит справа от первой точки: здесь <code>shop.ru</code>. Всё, что после, — <b>чужой домен</b>.'},
+  {fake:0, a:'vk-com.ru', b:'vk.com',
+   why:'<b>Дефис вместо точки</b>: <code>vk-com.ru</code> — совсем другой сайт, к <code>vk.com</code> отношения не имеет.'},
+  {fake:1, a:'bank-online.ru', b:'b' + CYR_A + 'nk-online.ru',
+   why:'В поддельном адресе буква «а» — <b>кириллическая</b>, а не латинская. Глазами не отличить; браузер покажет её как <code>xn--…</code>.'},
+  {fake:1, a:'college.ru/login', b:'college-login.ru',
+   why:'<code>college-login.ru</code> — не подраздел сайта колледжа, а <b>чужой домен</b> с похожим названием. Настоящий путь — <code>college.ru/login</code>.'},
+  {fake:0, a:'mail.yandex.ru.inbox-secure.net', b:'mail.yandex.ru',
+   why:'Адрес читают справа налево: настоящий домен здесь <code>inbox-secure.net</code>, а «mail.yandex.ru» в начале — приманка.'},
+  {fake:1, a:'gosuslugi.ru', b:'gosuslugi-ru.site',
+   why:'Приписка через дефис и <b>чужая зона</b> <code>.site</code> вместо <code>.ru</code>.'}
+];
+var U9_SOLVED = {};
+
+function u9init(){
+  U9_SOLVED = {};
+  var h = '';
+  for(var i=0;i<U9.length;i++){
+    h += '<div class="urlpair" id="u9_' + i + '">' +
+         '<div class="mut">Пара ' + (i+1) + '. Кликни по поддельному адресу:</div>' +
+         '<div class="urlbtn" data-p="' + i + '" data-i="0">' + u9esc(U9[i].a) + '</div>' +
+         '<div class="urlbtn" data-p="' + i + '" data-i="1">' + u9esc(U9[i].b) + '</div>' +
+         '<div class="mut" id="why9_' + i + '" style="display:none"></div></div>';
+  }
+  $('urlwrap').innerHTML = h;
+  var btns = $('urlwrap').getElementsByClassName('urlbtn');
+  var arr = [];
+  for(var j=0;j<btns.length;j++) arr.push(btns[j]);
+  for(var k=0;k<arr.length;k++){ arr[k].onclick = function(){ u9pick(this); }; }
+  $('st9').textContent = '0 из ' + U9.length + ' пар';
+}
+function u9esc(s){
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function u9count(){
+  var c = 0;
+  for(var k in U9_SOLVED){ if(U9_SOLVED[k]) c++; }
+  return c;
+}
+function u9pick(el){
+  var p = parseInt(el.getAttribute('data-p'), 10);
+  var idx = parseInt(el.getAttribute('data-i'), 10);
+  if(S.done.m9 || U9_SOLVED[p]) return;
+
+  var why = $('why9_' + p), pair = $('u9_' + p);
+  why.style.display = 'block';
+
+  if(idx === U9[p].fake){
+    U9_SOLVED[p] = true;
+    el.className = 'urlbtn badpick';
+    pair.className = 'urlpair done';
+    why.innerHTML = '<b>Верно, это подделка.</b> ' + U9[p].why;
+    var n = u9count();
+    $('st9').textContent = n + ' из ' + U9.length + ' пар';
+    if(n >= U9.length){
+      $('st9').className = 'status ok';
+      complete('m9');
+    } else {
+      toast('👌 Пара ' + (p + 1) + ' разобрана (' + n + '/' + U9.length + ').');
+    }
+  } else {
+    el.className = 'urlbtn badpick';
+    why.innerHTML = '<b>Это настоящий адрес.</b> ' + U9[p].why + ' Найди поддельный в этой паре.';
+    addScore(-2);
+    toast('❌ Этот адрес настоящий. Смотри внимательнее на домен.', true);
+  }
+}
+
+/* ================== МИССИЯ 10: шифр замены ================== */
+var S10_UP  = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+var S10_KEY = 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ';
+var S10_CODES = [1044,1054,1057,1058,1059,1055,32,1056,1040,1047,1056,1045,1064,1045,1053];
+var S10_SOLVED_TABLE = false;
+
+function s10plain(){
+  var s = '';
+  for(var i=0;i<S10_CODES.length;i++) s += String.fromCharCode(S10_CODES[i]);
+  return s;
+}
+function s10enc(text){
+  var out = '', t = String(text).toUpperCase();
+  for(var i=0;i<t.length;i++){
+    var j = S10_UP.indexOf(t.charAt(i));
+    out += (j < 0) ? t.charAt(i) : S10_KEY.charAt(j);
+  }
+  return out;
+}
+function s10dec(text){
+  var out = '', t = String(text).toUpperCase();
+  for(var i=0;i<t.length;i++){
+    var j = S10_KEY.indexOf(t.charAt(i));
+    out += (j < 0) ? t.charAt(i) : S10_UP.charAt(j);
+  }
+  return out;
+}
+function s10init(){
+  $('m10cipher').textContent = s10enc(s10plain());
+
+  var h = '<table class="subtable"><tr>';
+  for(var i=0;i<S10_KEY.length;i++) h += '<td class="up">' + S10_KEY.charAt(i) + '</td>';
+  h += '</tr><tr>';
+  for(var j=0;j<S10_UP.length;j++) h += '<td>' + S10_UP.charAt(j) + '</td>';
+  h += '</tr></table>';
+  $('subwrap').innerHTML = h;
+
+  $('m10check').onclick = s10check;
+  $('m10answer').onkeydown = function(e){ if(e.keyCode === 13) s10check(); };
+}
+function s10check(){
+  if(S.done.m10) return;
+  var u = m2norm($('m10answer').value);
+  var p = m2norm(s10plain());
+  var err = $('m10err');
+  if(!u){
+    err.textContent = 'Поле пустое. Возьми шифр и заменяй букву за буквой по таблице.';
+    err.style.display = 'block';
+    return;
+  }
+  if(u === p){
+    err.style.display = 'none';
+    complete('m10');
+    toast('🔓 Расшифровано! Шифр замены вскрыт. Настоящая криптография устроена сложнее, но принцип тот же.');
+  } else {
+    err.textContent = 'Пока не то. В таблице верхняя строка — буква из шифра, нижняя — её настоящее значение.';
+    err.style.display = 'block';
+    addScore(-2);
+  }
+}
+
+/* ================== МИССИЯ 11: хеш и целостность ================== */
+var H11_OK = 'Договор №14\nСумма: 100000 руб.\nСрок оплаты: 31.12.2026';
+var H11_FILES = [
+  {name:'dogovor_v1.txt',     text:H11_OK},
+  {name:'dogovor_copy.txt',   text:H11_OK},
+  {name:'dogovor_final.doc',  text:'Договор №14\nСумма: 1000000 руб.\nСрок оплаты: 31.12.2026'},
+  {name:'dogovor_backup.txt', text:H11_OK}
+];
+var H11_BAD = 2;   /* индекс подменённого файла */
+
+function h11hash(str){
+  var h = 0x811c9dc5;
+  for(var i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return ('0000000' + h.toString(16).toUpperCase()).slice(-8);
+}
+function h11init(){
+  $('h11ref').textContent = h11hash(H11_OK);
+  var h = '';
+  for(var i=0;i<H11_FILES.length;i++){
+    h += '<div class="rowitem" id="h11row' + i + '">' +
+           '<div style="flex:1">' +
+             '<b>📄 ' + H11_FILES[i].name + '</b>' +
+             '<div class="filebox">' + u9esc(H11_FILES[i].text).replace(/\n/g, '<br>') + '</div>' +
+             '<span class="mini">хеш: <span class="hashval" id="h11hash' + i + '">не посчитан</span></span>' +
+           '</div>' +
+           '<div style="display:flex;flex-direction:column;gap:6px">' +
+             '<button class="btn small" data-h="' + i + '">🔒 Посчитать хеш</button>' +
+             '<button class="btn small" data-b="' + i + '">⚠ Это подмена</button>' +
+           '</div>' +
+         '</div>';
+  }
+  $('h11wrap').innerHTML = h;
+  var btns = [], all = $('h11wrap').getElementsByTagName('button');
+  for(var j=0;j<all.length;j++) btns.push(all[j]);
+  for(var k=0;k<btns.length;k++){
+    if(btns[k].getAttribute('data-h') !== null){
+      btns[k].onclick = function(){ h11show(parseInt(this.getAttribute('data-h'), 10)); };
+    } else {
+      btns[k].onclick = function(){ h11mark(parseInt(this.getAttribute('data-b'), 10)); };
+    }
+  }
+  $('m11err').style.display = 'none';
+}
+function h11show(i){
+  var el = $('h11hash' + i);
+  if(!el || el.textContent !== 'не посчитан') return;
+  var hh = h11hash(H11_FILES[i].text);
+  el.textContent = hh;
+  if(hh !== h11hash(H11_OK)) el.className = 'hashval mismatch';
+  toast('Хеш ' + H11_FILES[i].name + ': ' + hh);
+}
+function h11mark(i){
+  if(S.done.m11) return;
+  var err = $('m11err'), row = $('h11row' + i);
+  if(i === H11_BAD){
+    if(row) row.className = 'rowitem fixed';
+    err.className = 'okmsg';
+    err.style.display = 'block';
+    err.innerHTML = '<b>Верно, это подмена!</b> В файле «100000 руб.» превратилось в «1000000 руб.» — ' +
+      'один лишний символ, а хеш изменился целиком. Так контроль целостности ловит подмену ' +
+      'файлов, обновлений и договоров.';
+    complete('m11');
+  } else {
+    if(row) row.className = 'rowitem sel';
+    err.className = 'errmsg';
+    err.style.display = 'block';
+    err.innerHTML = 'Файл <b>' + H11_FILES[i].name + '</b> — не подмена: его хеш совпадает с эталоном.';
+    addScore(-2);
+    toast('❌ Этот файл совпадает с эталоном.', true);
+  }
+}
+
+/* ================== ЗАПУСК И ОБЩИЕ ОБРАБОТЧИКИ ================== */
+function markAct(){ lastAct = new Date().getTime(); }
+
+function watchStuck(){
+  if(!S.started || doneCount() >= 5) return;
+  if(new Date().getTime() - lastAct < 180000) return;
+  toast('👀 Застрял? Нажми жёлтую кнопку «💡 Подсказка» в своей миссии — она есть у каждой. ' +
+        'А в терминале попробуй ввести help.');
+  lastAct = new Date().getTime();
+}
+
+function restoreDone(){
+  for(var i=0;i<MTOTAL;i++){
+    var mid = MKEY[i];
+    if(!S.done[mid]) continue;
+    var card = document.getElementById(mid);
+    if(card) card.className = 'card done';
+    var stEl = $(STID[mid]);
+    if(stEl){ stEl.textContent = '✔ ПРОЙДЕНА'; stEl.className = 'status ok'; }
+    var okEl = $(OKID[mid]);
+    if(okEl) okEl.style.display = 'block';
+  }
+  if(S.done.m3) $('st3').textContent = 'найдено 6/6';
+  if(S.done.m4) $('st4').textContent = '6 из 6 решено';
+}
+
+function init(){
+  var restored = load();
+
+  $('score').textContent = S.score;
+  $('scoretotal').textContent = TOTALSCORE;
+  $('timer').textContent = '⏱ ' + fmt(S.timeLeft);
+
+  /* Миссия 1: пароль */
+  $('pwin').value = '';
+  $('pwin').oninput = function(){ updatePw(this.value); };
+  updatePw('');
+  wireHint('pwhint', 'pwhintbox', 'm1');
+
+  /* Миссия 2: шифр */
+  m2init();
+  wireHint('m2hint', 'm2hintbox', 'm2');
+
+  /* Миссия 3: фишинг */
+  m3init();
+  wireHint('m3hint', 'm3hintbox', 'm3');
+
+  /* Миссия 4: социальная инженерия */
+  m4init();
+  wireHint('m4hint', 'm4hintbox', 'm4');
+
+  /* Миссия 5: терминал */
+  m5init();
+  wireHint('m5hint', 'm5hintbox', 'm5');
+
+  /* Миссия 6: два фактора */
+  f6init();
+  wireHint('m6hint', 'm6hintbox', 'm6');
+
+  /* Миссия 7: минимальные права */
+  p7init();
+  wireHint('m7hint', 'm7hintbox', 'm7');
+
+  /* Миссия 8: журнал сервера */
+  l8init();
+  wireHint('m8hint', 'm8hintbox', 'm8');
+
+  /* Миссия 9: поддельные адреса */
+  u9init();
+  wireHint('m9hint', 'm9hintbox', 'm9');
+
+  /* Миссия 10: шифр замены */
+  s10init();
+  wireHint('m10hint', 'm10hintbox', 'm10');
+
+  restoreDone();
+
+  /* сертификат и общие кнопки */
+  $('certbtn').onclick = issueCert;
+  $('printbtn').onclick = function(){ window.print(); };
+  if(S.name) $('stname').value = S.name;
+  $('stname').onkeydown = function(e){ if(e.keyCode === 13) issueCert(); };
+
+  $('startbtn').onclick = function(){
+    if(!S.started){ S.started = true; S.timeLeft = 3600; save(); }
+    toast('🚀 Операция началась! Таймер на 60 минут запущен. Начинай с миссии 1.');
+    document.getElementById('m1').scrollIntoView();
+  };
+
+  $('resetbtn').onclick = function(){
+    if(confirm('Начать операцию заново? Очки и прогресс будут сброшены.')){
+      try{ localStorage.removeItem(LSKEY); }catch(e){}
+      location.reload();
+    }
+  };
+
+  document.onclick = markAct;
+  document.onkeydown = markAct;
+  window.onbeforeunload = save;
+
+  renderNav();
+  renderFrags();
+
+  setInterval(tick, 1000);
+  setInterval(watchStuck, 20000);
+
+  if(restored){
+    toast('💾 Прогресс восстановлен: миссий пройдено ' + doneCount() + ' из 5, очки: ' + S.score + '.');
+  }
+}
+
+if(window.addEventListener){ window.addEventListener('load', init, false); }
+else { window.onload = init; }
+</script>
+</body>
+</html>
+
+
