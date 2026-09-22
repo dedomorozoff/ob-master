@@ -2406,6 +2406,7 @@ function init(){
 
   $('resetbtn').onclick = function(){
     if(confirm('Начать операцию заново? Очки и прогресс будут сброшены.')){
+      window.onbeforeunload = null; /* не даём save() записать состояние обратно */
       try{ localStorage.removeItem(LSKEY); }catch(e){}
       location.reload();
     }
