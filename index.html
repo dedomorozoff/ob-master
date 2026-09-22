@@ -210,6 +210,35 @@ select.tool{background:#081209; color:var(--green); border:1px solid var(--line)
 .wifinet.good{border-color:var(--green); color:var(--green)}
 .mini{font-size:12px; color:var(--mut)}
 footer{text-align:center; color:var(--mut); font-size:12px; padding:30px 0 10px}
+/* --- адаптивность: планшет и телефон --- */
+@media (max-width:720px){
+  body{font-size:15px}
+  h1{font-size:22px} h2{font-size:19px}
+  .wrap{padding:14px 10px 60px}
+  .card{padding:14px 12px}
+  header{padding:8px 10px; gap:8px}
+  .hud{gap:8px}
+  .hud .box{font-size:12px; padding:3px 8px}
+  #progwrap{width:80px}
+  .bigtime{font-size:26px}
+  .shiftbig{font-size:24px; min-width:56px}
+  .ciphertext{font-size:17px; letter-spacing:2px}
+  .rowitem{flex-wrap:wrap}
+  table.matrix, table.subtable{display:block; overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .cert{padding:18px 10px}
+  .cert input{width:100%; max-width:340px}
+  .cert .name{min-width:0; max-width:100%; font-size:22px}
+  .codephrase{font-size:18px; letter-spacing:2px}
+  .toast{left:12px; right:12px; transform:none; max-width:none}
+  .emailbody{padding:12px}
+}
+@media (max-width:460px){
+  .logo{font-size:14px}
+  .logo small{display:none}
+  h1{font-size:20px}
+  .cert .name{font-size:19px}
+  .qblock label, .rowitem .txt, .orderbtn{font-size:13px}
+}
 @media print{
   body{background:#fff}
   header,.card,footer,.toast,.noprint{display:none !important}
