@@ -211,7 +211,7 @@ index.html   20 миссий + двухуровневый финал + серт�
              очки 0/400, фрагменты, подсказки, анти-ступор, localStorage, печать)
 ROADMAP.md   этот план
 README.md    методичка преподавателя: план на час, все ответы 1–20, раздатка
-tools/       автотесты (smoke.js, check.js, e2e.js) и сценарии inject_*.html
+tools/       автотесты (smoke.js, check.js, e2e.js, qrtest.js) и сценарии inject_*.html
 ```
 
 Чек-лист Definition of Done:
@@ -227,7 +227,7 @@ tools/       автотесты (smoke.js, check.js, e2e.js) и сценарии
 | 7 | Прогон на 2–3 «средних» студентах | ⏳ на занятии |
 
 Сводка автопроверок: `node tools/smoke.js` — 57/57, `node tools/check.js` — PASS,
-`node tools/e2e.js` — 59/59 и 11/11.
+`node tools/e2e.js` — 59/59 и 11/11, `node tools/qrtest.js` — 118/118.
 
 ### История правок
 - v1 (5 миссий, 100 очков): каркас, пароль, шифр Цезаря, фишинг, соц. инженерия, терминал.
