@@ -10,6 +10,8 @@
 ---
 
 ## 1. Как запустить
+[Стенд](https://dedomorozoff.github.io/ob-master/)
+[QR код](https://dedomorozoff.github.io/ob-master/qrcode.html)
 
 **Способ 1 (простой):** скопировать `index.html` на рабочий стол каждого ПК и
 дважды щёлкнуть по файлу. Откроется браузер.
